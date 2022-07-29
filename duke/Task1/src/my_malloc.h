@@ -4,7 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
+#include <assert.h>
+#include <sys/types.h>
 
 /* First Fit malloc/free */
 void* ff_malloc(size_t size);
