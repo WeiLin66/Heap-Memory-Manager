@@ -7,15 +7,15 @@
 
 duke大學malloc lab
 
-### Task1
+### Task 1
 
-
+自行實現malloc()/free()函式功能
 
 
 
 ### Task 2
 
-
+線程安全版本
 
 
 
