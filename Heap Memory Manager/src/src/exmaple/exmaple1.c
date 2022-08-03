@@ -7,19 +7,19 @@
 #include "glthread.h"
 
 /* 自定義結構體 */
-typedef struct emp_test1_{
+typedef struct emp_{
     char name[30];
     unsigned int salary;
     char designation[30];
     unsigned int emp_id;
-    glthread_t glnode;
-}emp_test1_t;
+    glthread_t glthread_node_t;
+}emp_t;
 
 /* 打印結構體資訊 */
 void print_emp_detail(glthread_t* glnode){
-    unsigned long offset = offsetof(emp_test1_t, glnode);
+    unsigned long offset = offsetof(emp_t, glthread_node_t);
     unsigned long head = (unsigned long)glnode - offset;
-    emp_test1_t* ptr = (emp_test1_t*)head;
+    emp_t* ptr = (emp_t*)head;
 
     printf("name: %s\n", ptr->name);
     printf("salary: %u\n", ptr->salary);
@@ -29,13 +29,13 @@ void print_emp_detail(glthread_t* glnode){
 
 /* 測試程式 */
 void example_1(){
-    emp_test1_t t;
+    emp_t t;
     strcpy(t.name, "Zach");
     t.salary = 64000;
     strcpy(t.designation, "engineer");
     t.emp_id = 21025;
 
-    emp_test1_t* emp = &t;
+    emp_t* emp = &t;
 
-    print_emp_detail(&(emp->glnode));
+    print_emp_detail(&(emp->glthread_node_t));
 }
