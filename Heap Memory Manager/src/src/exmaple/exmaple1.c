@@ -9,16 +9,16 @@
 /* 自定義結構體 */
 typedef struct emp_{
     char name[30];
-    unsigned int salary;
+    uint32_t salary;
     char designation[30];
-    unsigned int emp_id;
-    glthread_t glthread_node_t;
+    uint32_t emp_id;
+    glthread_node_t glthread_node;
 }emp_t;
 
 /* 打印結構體資訊 */
-void print_emp_detail(glthread_t* glnode){
-    unsigned long offset = offsetof(emp_t, glthread_node_t);
-    unsigned long head = (unsigned long)glnode - offset;
+void print_emp_detail(glthread_node_t* glnode){
+    uint64_t offset = offsetof(emp_t, glthread_node);
+    uint64_t head = (uint64_t)glnode - offset;
     emp_t* ptr = (emp_t*)head;
 
     printf("name: %s\n", ptr->name);
@@ -37,5 +37,5 @@ void example_1(){
 
     emp_t* emp = &t;
 
-    print_emp_detail(&(emp->glthread_node_t));
+    print_emp_detail(&(emp->glthread_node));
 }

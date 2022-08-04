@@ -2,21 +2,52 @@
 #define __GLTHREAD_H_
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
-#define offsetof(struct_name, field_name) (unsigned long)&((struct_name*)0)->field_name
+/* offset caculate macro */
+#define offsetof(struct_name, field_name) (uint64_t)&((struct_name*)0)->field_name
 
-#define ITERATE_GL_THREADS_BEGIN(lstptr, struct_type, ptr)      \
-{                                                               \
-    glthread_node_t *_glnode = NULL, *_next = NULL;             \
-    for(_glnode = lstptr->head; _glnode; _glnode = _next){      \
-        _next = _glnode->right;                                 \
-        ptr = (struct_type *)((char *)_glnode - lstptr->offset);
+/* Iterative macro (dll) */
+#define GLTHREAD_ITERATE_BEGIN(list_ptr, struct_type, ptr)                      \
+        glthread_node_t* _node = (glthread_node_t*)list_ptr->head->right;       \
+        glthread_node_t* _node_next = NULL;                                     \
+        for(; _node; _node = _node_next){                                       \
+            _node_next = _node->right;                                          \
+            ptr = (struct_type*)((char*)_node - list_ptr->offset);             \
 
-#define ITERATE_GL_THREADS_ENDS }}
 
-typedef struct _glthread{
-    struct _glthread *left;
-    struct _glthread *right;
+#define GLTHREAD_ITERATE_END }
+
+
+#define ITERATE_LIST_BEGIN(list_ptr, _node)           \
+{                                                     \
+    _node = list_ptr->head;                           \
+    glthread_node_t* _node_next = NULL;               \
+    for(;_node != NULL; _node = _node_next){          \
+        _node_next = (glthread_node_t*)_node->right;  \
+
+#define ITERATE_LIST_END }}
+
+
+/* glthread_node_t init macro */
+#define glthread_node_init(glnode)                                  \
+        glnode->left = NULL;                                        \
+        glnode->right = NULL;                                       \
+
+typedef struct glthread_node_{
+    struct glthread_node_ *left;
+    struct glthread_node_ *right;
+} glthread_node_t;
+
+typedef struct glthread_{
+    glthread_node_t* head;
+    uint32_t offset;
 } glthread_t;
+
+void glthread_init(glthread_t** list, uint32_t offset);
+void glthread_add_first(glthread_t* list, glthread_node_t* glnode);
+void glthread_remove(glthread_t* list, glthread_node_t* glnode);
+void glthread_free(void);
 
 #endif /* __GLTHREAD_H_ */
