@@ -23,7 +23,7 @@ int main(){
 	glthread_node_init((&(node[2].glnode)));
 
 	for(int i=0; i<3; i++){
-		glthread_add(list, &(node[i].glnode));
+		glthread_add_first(list, &(node[i].glnode));
 	}
 
 	test* ptr;
