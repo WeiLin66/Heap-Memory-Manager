@@ -17,6 +17,7 @@ typedef struct emp_{
 
 /* 打印結構體資訊 */
 void print_emp_detail(glthread_node_t* glnode){
+
     uint64_t offset = offsetof(emp_t, glthread_node);
     uint64_t head = (uint64_t)glnode - offset;
     emp_t* ptr = (emp_t*)head;
@@ -29,6 +30,7 @@ void print_emp_detail(glthread_node_t* glnode){
 
 /* 測試程式 */
 void example_1(){
+    
     emp_t t;
     strcpy(t.name, "Zach");
     t.salary = 64000;

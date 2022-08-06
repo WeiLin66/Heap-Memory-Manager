@@ -7,6 +7,7 @@
  * @return void* 
  */
 void* my_malloc(int size){
+
     void* ptr = sbrk(0);
 
     if(sbrk(size) == NULL){
@@ -22,6 +23,7 @@ void* my_malloc(int size){
  * @param size 
  */
 void my_free(int size){
+    
     assert(size > 0);
     sbrk(size * -1);
 }
