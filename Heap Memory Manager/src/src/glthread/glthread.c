@@ -28,6 +28,7 @@ void glthread_add(glthread_node_t* current, glthread_node_t* new){
     current->right = new;
 }
 
+
 /**
  * 添加節點到首節點 
  */
@@ -45,6 +46,7 @@ void glthread_add_first(glthread_t* list, glthread_node_t* glnode){
 
     list->head = glnode; 
 }
+
 
 /**
  * 刪除指定節點 
@@ -73,7 +75,8 @@ glthread_node_t* glthread_remove(glthread_node_t* current, glthread_node_t* glno
         return pre != NULL ? pre->right : next;
     }
 
-    current->right = glthread_remove(current->right, glnode);
+    current->right = glthread_remove(current->right, glnode); // 返回右節點
+
     return current;
 }
 
