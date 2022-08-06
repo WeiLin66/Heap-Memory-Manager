@@ -49,6 +49,6 @@ typedef struct glthread_{
 void glthread_init(glthread_t** list, uint32_t offset);
 void glthread_add(glthread_node_t* current, glthread_node_t* new);
 void glthread_add_first(glthread_t* list, glthread_node_t* glnode);
-glthread_node_t* glthread_remove(glthread_node_t** current, glthread_node_t* glnode);
+glthread_node_t* glthread_remove(glthread_node_t* current, glthread_node_t* glnode);
 
 #endif /* __GLTHREAD_H_ */

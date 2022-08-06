@@ -49,12 +49,12 @@ void glthread_add_first(glthread_t* list, glthread_node_t* glnode){
 /**
  * 刪除指定節點 
  */
-glthread_node_t* glthread_remove(glthread_node_t** current, glthread_node_t* glnode){
-    if(*current == NULL || glnode == NULL){
+glthread_node_t* glthread_remove(glthread_node_t* current, glthread_node_t* glnode){
+    if(current == NULL || glnode == NULL){
         return NULL;
     }
 
-    if(*current == glnode){
+    if(current == glnode){
         glthread_node_t* next = glnode->right;
         glthread_node_t* pre = glnode->left;
 
@@ -73,7 +73,7 @@ glthread_node_t* glthread_remove(glthread_node_t** current, glthread_node_t* gln
         return pre != NULL ? pre->right : next;
     }
 
-    (*current)->right = glthread_remove(&((*current)->right), glnode);
-    return *current;
+    current->right = glthread_remove(current->right, glnode);
+    return current;
 }
 

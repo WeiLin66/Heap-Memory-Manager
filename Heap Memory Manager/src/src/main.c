@@ -30,7 +30,7 @@ int main(){
 		}
 	}
 
-	list->head = glthread_remove(&(list->head), &(node[1].glnode));
+	list->head = glthread_remove(list->head, &(node[1].glnode));
 
 	test* ptr;
 	GLTHREAD_ITERATE_BEGIN(list, test, ptr)
