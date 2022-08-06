@@ -23,8 +23,14 @@ int main(){
 	glthread_node_init((&(node[2].glnode)));
 
 	for(int i=0; i<3; i++){
-		glthread_add_first(list, &(node[i].glnode));
+		if(i == 0){
+			glthread_add_first(list, &(node[i].glnode));
+		}else{
+			glthread_add(&(node[i-1].glnode), &(node[i].glnode));
+		}
 	}
+
+	list->head = glthread_remove(&(list->head), &(node[1].glnode));
 
 	test* ptr;
 	GLTHREAD_ITERATE_BEGIN(list, test, ptr)

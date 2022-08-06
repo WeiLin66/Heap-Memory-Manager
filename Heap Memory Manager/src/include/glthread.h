@@ -9,15 +9,16 @@
 #define offsetof(struct_name, field_name) (uint64_t)&((struct_name*)0)->field_name
 
 /* Iterative macro (dll) */
-#define GLTHREAD_ITERATE_BEGIN(list_ptr, struct_type, ptr)                      \
-        glthread_node_t* _node = (glthread_node_t*)list_ptr->head->right;       \
-        glthread_node_t* _node_next = NULL;                                     \
-        for(; _node; _node = _node_next){                                       \
-            _node_next = _node->right;                                          \
-            ptr = (struct_type*)((char*)_node - list_ptr->offset);             \
+#define GLTHREAD_ITERATE_BEGIN(list_ptr, struct_type, ptr)          \
+{                                                                   \
+    glthread_node_t* _node = list_ptr->head;                        \
+    glthread_node_t* _node_next = NULL;                             \
+    for(; _node; _node = _node_next){                               \
+        _node_next = _node->right;                                  \
+        ptr = (struct_type *)((char *)_node - list_ptr->offset);
 
 
-#define GLTHREAD_ITERATE_END }
+#define GLTHREAD_ITERATE_END }}
 
 
 #define ITERATE_LIST_BEGIN(list_ptr, _node)           \
@@ -46,8 +47,8 @@ typedef struct glthread_{
 } glthread_t;
 
 void glthread_init(glthread_t** list, uint32_t offset);
+void glthread_add(glthread_node_t* current, glthread_node_t* new);
 void glthread_add_first(glthread_t* list, glthread_node_t* glnode);
-void glthread_remove(glthread_t* list, glthread_node_t* glnode);
-void glthread_free(void);
+glthread_node_t* glthread_remove(glthread_node_t** current, glthread_node_t* glnode);
 
 #endif /* __GLTHREAD_H_ */

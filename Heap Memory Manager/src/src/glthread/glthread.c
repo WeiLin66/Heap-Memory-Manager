@@ -4,34 +4,76 @@
  * 初始化glthread list
  */
 void glthread_init(glthread_t** list, uint32_t offset){
-    *list = (glthread_node_t*)calloc(1, sizeof(glthread_t));
-    (*list)->head = (glthread_node_t*)calloc(1, sizeof(glthread_node_t)); // dummy head
+    *list = (glthread_t*)calloc(1, sizeof(glthread_t));
+    (*list)->head = NULL;
     (*list)->offset = offset;
+}
+
+
+/**
+ * 添加新結點到指定節點右側
+ */
+void glthread_add(glthread_node_t* current, glthread_node_t* new){
+    if(current == NULL || new == NULL){
+        return;
+    }
+
+    new->right = current->right;
+    new->left = current;
+
+    if(new->right != NULL){
+        new->right->left = new;
+    }
+
+    current->right = new;
 }
 
 /**
  * 添加節點到首節點 
  */
 void glthread_add_first(glthread_t* list, glthread_node_t* glnode){
-    if(glnode == NULL || list == NULL || list->head == NULL){
+    if(glnode == NULL || list == NULL){
         return;
     }
 
-    glnode->right = list->head->right;
-    list->head->right = glnode; 
+    glnode->right = list->head;
+    glnode->left = NULL;
+    
+    if(glnode->right != NULL){
+        glnode->right->left = glnode;
+    }
+
+    list->head = glnode; 
 }
 
 /**
- * 從list中刪除節點 
+ * 刪除指定節點 
  */
-void glthread_remove(glthread_t* list, glthread_node_t* glnode){
+glthread_node_t* glthread_remove(glthread_node_t** current, glthread_node_t* glnode){
+    if(*current == NULL || glnode == NULL){
+        return NULL;
+    }
 
+    if(*current == glnode){
+        glthread_node_t* next = glnode->right;
+        glthread_node_t* pre = glnode->left;
+
+        /* 處理右節點 */
+        glnode->right = NULL;
+        if(next){
+            next->left = pre;
+        }
+
+        /* 處理左節點 */
+        glnode->left = NULL;
+        if(pre){
+            pre->right = next;
+        }
+
+        return pre != NULL ? pre->right : next;
+    }
+
+    (*current)->right = glthread_remove(&((*current)->right), glnode);
+    return *current;
 }
 
-
-/**
- * 釋放所有節點
- */ 
-void glthread_free(){
-
-}
