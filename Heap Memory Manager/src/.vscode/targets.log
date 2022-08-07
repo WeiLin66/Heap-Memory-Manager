@@ -1,6 +1,4 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
-make: *** No rule to make target 'src/main.o', needed by 'main'.  Stop.
-
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -8,7 +6,7 @@ make: *** No rule to make target 'src/main.o', needed by 'main'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Wed Aug  3 21:15:49 2022
+# Make data base, printed on Sun Aug  7 15:14:38 2022
 
 # Variables
 
@@ -49,13 +47,13 @@ SHELL = /bin/sh
 # makefile (from 'Makefile', line 43)
 RM = rm -f
 # environment
-VSCODE_NLS_CONFIG = {"locale":"zh-tw","availableLanguages":{"*":"zh-tw"},"_languagePackId":"a0b772d00248b7f5c117cab9736199be.zh-tw","_translationsConfigFile":"/home/zach/.config/Code/clp/a0b772d00248b7f5c117cab9736199be.zh-tw/tcf.json","_cacheRoot":"/home/zach/.config/Code/clp/a0b772d00248b7f5c117cab9736199be.zh-tw","_resolvedLanguagePackCoreLocation":"/home/zach/.config/Code/clp/a0b772d00248b7f5c117cab9736199be.zh-tw/3b889b090b5ad5793f524b5d1d39fda662b96a2a","_corruptedFile":"/home/zach/.config/Code/clp/a0b772d00248b7f5c117cab9736199be.zh-tw/corrupted.info","_languagePackSupport":true}
+VSCODE_NLS_CONFIG = {"locale":"zh-tw","availableLanguages":{"*":"zh-tw"},"_languagePackId":"a0b772d00248b7f5c117cab9736199be.zh-tw","_translationsConfigFile":"/home/zach/.config/Code/clp/a0b772d00248b7f5c117cab9736199be.zh-tw/tcf.json","_cacheRoot":"/home/zach/.config/Code/clp/a0b772d00248b7f5c117cab9736199be.zh-tw","_resolvedLanguagePackCoreLocation":"/home/zach/.config/Code/clp/a0b772d00248b7f5c117cab9736199be.zh-tw/da76f93349a72022ca4670c1b84860304616aaa2","_corruptedFile":"/home/zach/.config/Code/clp/a0b772d00248b7f5c117cab9736199be.zh-tw/corrupted.info","_languagePackSupport":true}
 # environment
 _ = /usr/share/code/code
 # makefile (from 'Makefile', line 10)
 CFLAGS := -Wall -Wextra -g
 # environment
-JOURNAL_STREAM = 8:38773
+JOURNAL_STREAM = 8:35628
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # makefile (from 'Makefile', line 1)
@@ -67,13 +65,13 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 USERNAME = zach
 # makefile (from 'Makefile', line 54)
-SOURCES := src/main.c
+SOURCES := src/mm.c src/glthread.c src/main.c src/malloc_version_1.c src/exmaple/exmaple1.c src/exmaple/example2.c
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
 DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
-MANAGERPID = 1737
+MANAGERPID = 1512
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -85,7 +83,7 @@ PATH = /home/zach/.local/bin:/home/zach/.local/bin:/usr/local/sbin:/usr/local/bi
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/zach-VirtualBox:@/tmp/.ICE-unix/2012,unix/zach-VirtualBox:/tmp/.ICE-unix/2012
+SESSION_MANAGER = local/zach-VirtualBox:@/tmp/.ICE-unix/1787,unix/zach-VirtualBox:/tmp/.ICE-unix/1787
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # makefile (from 'Makefile', line 41)
@@ -95,7 +93,7 @@ XDG_MENU_PREFIX = gnome-
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 531d86cba6c34c4c8774614b0af6a1a2
+INVOCATION_ID = 5c1c2d149096423aad7c467dfc1bda94
 # makefile (from 'Makefile', line 27)
 LIB := lib
 # default
@@ -107,7 +105,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 7700
+GIO_LAUNCHED_DESKTOP_FILE_PID = 8243
 # automatic
 %F = $(notdir $%)
 # environment
@@ -119,7 +117,7 @@ OUTPUTMAIN := output/main
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1951
+SSH_AGENT_PID = 1724
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -131,7 +129,7 @@ HOME = /home/zach
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
-VSCODE_CODE_CACHE_PATH = /home/zach/.config/Code/CachedData/3b889b090b5ad5793f524b5d1d39fda662b96a2a
+VSCODE_CODE_CACHE_PATH = /home/zach/.config/Code/CachedData/da76f93349a72022ca4670c1b84860304616aaa2
 # environment
 LOGNAME = zach
 # environment
@@ -185,7 +183,7 @@ MAKE_COMMAND := make
 # environment
 LANGUAGE = zh_TW:zh
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-de57b077-1.69.2-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-de57b077-1.70.0-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -199,7 +197,7 @@ MAIN := main
 # environment
 GDK_BACKEND = x11
 # makefile (from 'Makefile', line 39)
-SOURCEDIRS := src
+SOURCEDIRS := src src/exmaple
 # automatic
 +F = $(notdir $+)
 # environment
@@ -233,13 +231,13 @@ GJS_DEBUG_OUTPUT = stderr
 # default
 .RECIPEPREFIX := 
 # makefile (from 'Makefile', line 57)
-OBJECTS := src/main.o
+OBJECTS := src/mm.o src/glthread.o src/main.o src/malloc_version_1.o src/exmaple/exmaple1.o src/exmaple/example2.o
 # environment
 LANG = C
 # environment
-VSCODE_PID = 7700
+VSCODE_PID = 8243
 # variable set hash-table stats:
-# Load=113/1024=11%, Rehash=0, Collisions=17/166=10%
+# Load=113/1024=11%, Rehash=0, Collisions=17/176=10%
 
 # Pattern-specific Variable Values
 
@@ -248,9 +246,10 @@ VSCODE_PID = 7700
 # Directories
 
 # . (device 2053, inode 1712325): 8 files, no impossibilities.
-# src (device 2053, inode 1713409): 3 files, no impossibilities.
+# src/exmaple (device 2053, inode 1712444): 6 files, no impossibilities.
+# src (device 2053, inode 1713409): 11 files, no impossibilities.
 
-# 11 files, no impossibilities in 2 directories.
+# 25 files, no impossibilities in 3 directories.
 
 # Implicit Rules
 
@@ -262,26 +261,57 @@ all: output main
 #  Command line target.
 #  Implicit rule search has not been done.
 #  File does not exist.
-#  File has not been updated.
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/10=0%
 #  recipe to execute (from 'Makefile', line 68):
 	@echo Executing 'all' complete!
+
+# Not a target:
+src/malloc_version_1.o:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-07 15:10:03.440071934
+#  File has been updated.
+#  Successfully updated.
 
 .PHONY: clean
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
+ 
 
 # Not a target:
 src/main.o:
 #  Implicit rule search has been done.
-#  File does not exist.
+#  Last modified 2022-08-07 15:10:03.396072869
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+.SUFFIXES:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
 #  File has not been updated.
 
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
- 
 #  Last modified 2022-08-03 21:15:37.400423772
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+src/exmaple/exmaple1.o:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-07 15:10:03.496070744
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+src/mm.o:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-07 15:10:03.300074909
 #  File has been updated.
 #  Successfully updated.
 
@@ -306,6 +336,13 @@ run: all
 	./$(OUTPUTMAIN)
 	@echo Executing 'run: all' complete!
 
+# Not a target:
+src/exmaple/example2.o:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-07 15:10:03.552069553
+#  File has been updated.
+#  Successfully updated.
+
 clean:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
@@ -316,35 +353,62 @@ clean:
 	$(RM) $(call FIXPATH,$(OBJECTS))
 	@echo Cleanup complete!
 
-main: src/main.o
+# Not a target:
+src/glthread.o:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-07 15:10:03.34007406
+#  File has been updated.
+#  Successfully updated.
+
+main: src/mm.o src/glthread.o src/main.o src/malloc_version_1.o src/exmaple/exmaple1.o src/exmaple/example2.o
 #  Implicit rule search has not been done.
+#  Implicit/static pattern stem: ''
 #  File does not exist.
-#  File has not been updated.
+#  File has been updated.
+#  Needs to be updated (-q is set).
+# automatic
+# @ := main
+# automatic
+# % := 
+# automatic
+# * := 
+# automatic
+# + := src/mm.o src/glthread.o src/main.o src/malloc_version_1.o src/exmaple/exmaple1.o src/exmaple/example2.o
+# automatic
+# | := 
+# automatic
+# < := src/mm.o
+# automatic
+# ^ := src/mm.o src/glthread.o src/main.o src/malloc_version_1.o src/exmaple/exmaple1.o src/exmaple/example2.o
+# automatic
+# ? := src/mm.o src/glthread.o src/main.o src/malloc_version_1.o src/exmaple/exmaple1.o src/exmaple/example2.o
+# variable set hash-table stats:
+# Load=8/32=25%, Rehash=0, Collisions=2/18=11%
 #  recipe to execute (from 'Makefile', line 74):
 	$(CC) $(CFLAGS) $(INCLUDES) -o $(OUTPUTMAIN) $(OBJECTS) $(LFLAGS) $(LIBS)
 
 output:
 #  Implicit rule search has not been done.
-#  Last modified 2022-08-03 21:15:37.380413733
+#  Last modified 2022-08-07 15:13:56.342932787
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 71):
 	$(MD) $(OUTPUT)
 
 # files hash-table stats:
-# Load=11/1024=1%, Rehash=0, Collisions=0/30=0%
+# Load=16/1024=2%, Rehash=0, Collisions=3/41=7%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 20 / storage = 145 B / avg = 7 B
-# current buf: size = 8162 B / used = 145 B / count = 20 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 38 / storage = 379 B / avg = 9 B
+# current buf: size = 8162 B / used = 379 B / count = 38 / avg = 9 B
 
-# strcache performance: lookups = 40 / hit rate = 50%
+# strcache performance: lookups = 61 / hit rate = 37%
 # hash-table stats:
-# Load=20/8192=0%, Rehash=0, Collisions=2/40=5%
-# Finished Make data base on Wed Aug  3 21:15:49 2022
+# Load=38/8192=0%, Rehash=0, Collisions=3/61=5%
+# Finished Make data base on Sun Aug  7 15:14:38 2022
 
  

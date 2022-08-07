@@ -8,6 +8,7 @@
 
 /* 自定義結構體 */
 typedef struct emp_{
+    
     char name[30];
     uint32_t salary;
     char designation[30];

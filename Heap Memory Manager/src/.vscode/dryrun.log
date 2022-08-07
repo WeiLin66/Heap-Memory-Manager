@@ -1,8 +1,13 @@
 make --dry-run --always-make --keep-going --print-directory
 make: Entering directory '/home/zach/桌面/my_malloc/Heap Memory Manager/src'
 mkdir -p output
+gcc -Wall -Wextra -g -Iinclude -c src/mm.c  -o src/mm.o
+gcc -Wall -Wextra -g -Iinclude -c src/glthread.c  -o src/glthread.o
 gcc -Wall -Wextra -g -Iinclude -c src/main.c  -o src/main.o
-gcc -Wall -Wextra -g -Iinclude -o output/main src/main.o  -Llib
+gcc -Wall -Wextra -g -Iinclude -c src/malloc_version_1.c  -o src/malloc_version_1.o
+gcc -Wall -Wextra -g -Iinclude -c src/exmaple/exmaple1.c  -o src/exmaple/exmaple1.o
+gcc -Wall -Wextra -g -Iinclude -c src/exmaple/example2.c  -o src/exmaple/example2.o
+gcc -Wall -Wextra -g -Iinclude -o output/main src/mm.o src/glthread.o src/main.o src/malloc_version_1.o src/exmaple/exmaple1.o src/exmaple/example2.o  -Llib
 echo Executing 'all' complete!
 make: Leaving directory '/home/zach/桌面/my_malloc/Heap Memory Manager/src'
  

@@ -5,6 +5,7 @@
 #include "glthread.h"
 
 typedef struct _test{
+    
     int data;
     glthread_node_t glnode;
 }test;

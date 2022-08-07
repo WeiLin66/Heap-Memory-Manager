@@ -1,6 +1,7 @@
 #include "mm.h"
 
 static size_t SYSTEM_PAGE_SIZE = 0;
+static vm_page_family_list_t *first_vm_page_for_family = NULL;
 
 /**
  * 獲取VM Page Size
@@ -72,6 +73,15 @@ static void mm_release_vm_page(void* vm_page, uint32_t units){
     #if MM_DEBUG
         printf("Successfully munmap VM page to kernel!\n");
     #endif
+
+}
+
+
+/**
+ * 
+ */ 
+void mm_instantiate_new_family_page(char* struct_name, uint32_t struct_size){
+
 
 }
 

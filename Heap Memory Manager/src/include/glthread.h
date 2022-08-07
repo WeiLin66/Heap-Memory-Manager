@@ -36,12 +36,14 @@
         glnode->left = NULL;                                        \
         glnode->right = NULL;                                       \
 
-typedef struct glthread_node_{
-    struct glthread_node_ *left;
-    struct glthread_node_ *right;
+typedef struct _glthread_node{
+
+    struct _glthread_node *left;
+    struct _glthread_node *right;
 } glthread_node_t;
 
-typedef struct glthread_{
+typedef struct _glthread{
+    
     glthread_node_t* head;
     uint32_t offset;
 } glthread_t;
