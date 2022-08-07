@@ -42,7 +42,7 @@ static void* mm_get_vm_page(uint32_t units){
     memset(vm_page, 0x0, length);
 
     #if MM_DEBUG
-        printf("Successfully mmap VM page from kernel!\n");
+        printf("Successfully mmap VM page from kernel!\n\n");
     #endif
 
     return (void*)vm_page;
@@ -73,16 +73,112 @@ static void mm_release_vm_page(void* vm_page, uint32_t units){
     #if MM_DEBUG
         printf("Successfully munmap VM page to kernel!\n");
     #endif
+}
+
+
+/**
+ * 實例化結構體信息，並存放到VM Page中
+ */ 
+void mm_instantiate_new_page_family(char* struct_name, uint32_t struct_size){
+
+    if(struct_size > SYSTEM_PAGE_SIZE){
+        printf("%s() can not instantiate size that exceeds %ld bytes!\n", __FUNCTION__, SYSTEM_PAGE_SIZE);
+        return;
+    }
+
+    vm_page_family_t* current_family = NULL;
+    vm_page_family_list_t* new_vm_page_for_family = NULL;
+
+    if(first_vm_page_for_family == NULL){
+
+        first_vm_page_for_family = (vm_page_family_list_t*)mm_get_vm_page(1);
+        first_vm_page_for_family->next = NULL;
+    }
+
+    uint32_t count = 0;
+
+    ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_for_family, current_family)
+
+        if(strncmp(current_family->struct_name, struct_name, MAX_NAME_LEN) == 0){
+
+            assert(0);
+        }
+        ++count;
+    ITERATE_PAGE_FAMILIES_END
+
+    if(count == MAX_FAMILY_PER_PAGE){
+
+        new_vm_page_for_family = (vm_page_family_list_t*)mm_get_vm_page(1);
+        new_vm_page_for_family->next = first_vm_page_for_family;
+        first_vm_page_for_family = new_vm_page_for_family;
+        count = 0;    
+    }
+
+    strncpy(first_vm_page_for_family->vm_page[count].struct_name, struct_name, MAX_NAME_LEN);
+    first_vm_page_for_family->vm_page[count].struct_size = struct_size;
+}
+
+
+/**
+ * 遍歷所有vm_page_family_list_t中存放的結構體信息
+ */ 
+void mm_print_registered_page_families(){
+
+    if(first_vm_page_for_family == NULL){
+
+        printf("first_vm_page_for_family should be instantiated first!\n");
+        return;
+    }
+
+    vm_page_family_list_t* list_ptr = first_vm_page_for_family;
+    vm_page_family_t* current_family = NULL;
+    uint32_t vm_number = 1;
+
+    while(list_ptr){
+
+        printf("VM%d: \n", vm_number);
+
+        ITERATE_PAGE_FAMILIES_BEGIN(list_ptr, current_family)
+
+            printf("Struct Name: %s, Struct Size: %d\n", current_family->struct_name, current_family->struct_size);
+        ITERATE_PAGE_FAMILIES_END
+
+        list_ptr = list_ptr->next;
+        ++vm_number;
+
+        printf("\r\n");
+    }
 
 }
 
 
 /**
- * 
+ * 尋找vm_page_family_list_t中是否存在名為struct_name結構體
  */ 
-void mm_instantiate_new_family_page(char* struct_name, uint32_t struct_size){
+vm_page_family_t* lookup_page_family_by_name(char *struct_name){
 
+    if(first_vm_page_for_family == NULL){
 
+        printf("first_vm_page_for_family should be instantiated first!\n");
+        return NULL;
+    }
+
+    vm_page_family_list_t* list_ptr = first_vm_page_for_family;
+    vm_page_family_t* current_family = NULL;
+
+    while(list_ptr){
+
+        ITERATE_PAGE_FAMILIES_BEGIN(list_ptr, current_family)
+            
+            if(strncmp(current_family->struct_name, struct_name, MAX_NAME_LEN) == 0){
+                return current_family;
+            }
+        ITERATE_PAGE_FAMILIES_END
+
+        list_ptr = list_ptr->next;
+    }
+
+    return NULL;
 }
 
 

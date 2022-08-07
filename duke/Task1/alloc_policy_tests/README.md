@@ -1,3 +1,4 @@
+```
 This set of 3 programs are intended for performance study of the 
 three malloc allocation policies: first fit, best fit, worst fit.
 
@@ -58,3 +59,4 @@ are seeing execution time variability), or shorter (if the speed
 of your implementation is such that the execution takes so long 
 that it is a burden.  I would expect the default values should 
 result in runs of no more than a minute or two.
+```

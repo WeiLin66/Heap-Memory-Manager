@@ -1,3 +1,4 @@
+```
 This test program can be used as a simple correctness test for the 
 malloc implementation (with either of the 2 allocation policies). Note
 that this test certainly does not *guarantee* that your code is
@@ -25,3 +26,4 @@ values are:
        "FF" - use first fit
        "BF" - use best fit
 
+```
