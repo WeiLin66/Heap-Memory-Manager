@@ -1,8 +1,7 @@
 #include "glthread.h"
+#include "uapi_mm.h"
 
 int main(){
-
-	testapp_demo();
 
 	return 0;
 }
