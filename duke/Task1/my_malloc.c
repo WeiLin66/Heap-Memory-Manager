@@ -13,7 +13,7 @@ static void* get_vm_from_kernel(META_BLK_LIST* list){
 
     if(list->head == NULL && list->cur == NULL){
 
-        #if (MY_DEBUG == DEBUG_ON)
+        #if (MY_DEBUG)
             printf("[Info]: First get Virtual Memoey from kernel!\n");
         #endif
         get_mem = sbrk(0);
@@ -24,7 +24,7 @@ static void* get_vm_from_kernel(META_BLK_LIST* list){
     assert(get_mem != (void*)-1);
     list->tail += GET_VM_SIZE;
 
-    #if (MY_DEBUG == DEBUG_ON)
+    #if (MY_DEBUG)
         printf("[Info]: Extend Virtual Memory: %d\n", GET_VM_SIZE);
     #endif
 }
@@ -34,7 +34,7 @@ static void* get_vm_from_kernel(META_BLK_LIST* list){
  * print all dll info
  */ 
 static void print_meta_blk_info(){
-    #if (MY_DEBUG == DEBUG_ON)
+    #if (MY_DEBUG)
         META_BLK* head = GET_META_HEAD;
 
         ITERATE_LIST_BEGIN(ptr, head)
@@ -53,7 +53,7 @@ static META_BLK* split(META_BLK* node, size_t size){
 
     if(node == NULL){
 
-        #if (MY_DEBUG == DEBUG_ON)
+        #if (MY_DEBUG)
             printf("[Error]: Meta Block can't be NULL!\n");
         #endif
 
@@ -82,7 +82,7 @@ static void merge(META_BLK* node){
 
     if(node == NULL){
 
-        #if (MY_DEBUG == DEBUG_ON)
+        #if (MY_DEBUG)
             printf("[Error]: Merge Block can't be NULL!\n");
         #endif
 
@@ -101,7 +101,7 @@ static void merge(META_BLK* node){
     bool merge = false;
 
     if(pre_blk == NULL && next_blk == NULL){
-        
+
         return;
     }
 
@@ -228,7 +228,7 @@ void ff_free(void* addr){
 
     if(addr == NULL){
 
-        #if (MY_DEBUG == DEBUG_ON)
+        #if (MY_DEBUG)
             printf("[Error]: Address is NULL!\n");
         #endif
 
@@ -241,7 +241,7 @@ void ff_free(void* addr){
     ITERATE_LIST_BEGIN(ptr, head)
         if(ptr == free_target){
 
-            #if (MY_DEBUG == DEBUG_ON)
+            #if (MY_DEBUG)
                 printf("[Info]: Find Target %p\n", ptr);
             #endif
 
@@ -254,7 +254,7 @@ void ff_free(void* addr){
         }
     ITERATE_LIST_END
 
-    #if (MY_DEBUG == DEBUG_ON)
+    #if (MY_DEBUG)
         printf("[Info]: Target %p not found!\n", free_target);
     #endif
 }
