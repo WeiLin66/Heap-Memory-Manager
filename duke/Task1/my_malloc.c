@@ -48,14 +48,6 @@ static void print_meta_blk_info(){
         ITERATE_LIST_END
 
         printf("NULL\n");
-
-        printf("[Info]: ");
-        ITERATE_LIST_REVERSE_BEGIN(ptr, tail)
-            printf("[size: %d, is_empty: %d] <--> ", ptr->data_blk_size, ptr->is_empty);
-        ITERATE_LIST_END
-
-        printf("NULL\n");
-
     #endif
 }
 
@@ -63,7 +55,7 @@ static void print_meta_blk_info(){
 /**
  * split data block when demanded size is smaller than actual data block size
  */ 
-static META_BLK* split(META_BLK* node, size_t size){
+static void* split(META_BLK* node, size_t size){
 
     if(node == NULL){
 
@@ -73,6 +65,10 @@ static META_BLK* split(META_BLK* node, size_t size){
 
         return NULL;
     }
+
+    #if (MY_DEBUG)
+        printf("[Info]: Split Block!\n");
+    #endif
 
     uint32_t original_size = node->data_blk_size;
 
@@ -85,7 +81,7 @@ static META_BLK* split(META_BLK* node, size_t size){
     node->next = new_meta;
     node->is_empty = false;
 
-    return node;
+    return (uint8_t*)node + META_SIZE;
 }
 
 
@@ -149,13 +145,17 @@ static void merge(META_BLK* node){
     if(next_blk){
         next_blk->pre = ret;
     }
+
+    #if (MY_DEBUG)
+        printf("[Info]: Merge Block!\n");
+    #endif
 }
 
 
 /**
  * find any empty block in dll
  */ 
-static META_BLK* find_empty_blk(size_t size){
+static void* find_empty_blk(size_t size){
 
     if(meta_blk_list.head == NULL && meta_blk_list.cur == NULL){
 
@@ -175,7 +175,7 @@ static META_BLK* find_empty_blk(size_t size){
             if(ptr->data_blk_size == size){
 
                 ptr->is_empty = false;
-                return ptr;
+                return (uint8_t*)ptr + META_SIZE;
             }else if(ptr->data_blk_size > META_SIZE + size){
 
                 return split(ptr, size);
@@ -258,45 +258,48 @@ void ff_free(void* addr){
     ITERATE_LIST_BEGIN(ptr, head)
         if(ptr == free_target){
 
-            #if (MY_DEBUG)
-                printf("[Info]: Find Target %p\n", ptr);
-            #endif
-
             ptr->is_empty = true;
             merge(ptr);
-
-            break;
+            return;
         }
     ITERATE_LIST_END
-
-    #if (MY_DEBUG)
-        printf("[Info]: Target %p not found!\n", free_target);
-    #endif
 }
 
 int main(int argc, char*argv[]){
     
     char example[] = "simple test";
+    char example2[] = "new data";
 
     uint8_t* ptr1 = ff_malloc(20);
-
-    memcpy(ptr1, example, strlen(example)+1);
-
-    printf("data: %s\n", ptr1);
-
     uint8_t* ptr2 = ff_malloc(30);
-
     uint8_t* ptr3 = ff_malloc(40);
-
     uint8_t* ptr4 = ff_malloc(50);
 
-    // ff_free(ptr1);
+    printf("ptr1: %p\n", ptr1); 
+    printf("ptr2: %p\n", ptr2);
+    printf("ptr3: %p\n", ptr3);
+    printf("ptr4: %p\n", ptr4);
 
+    strncpy(ptr1, example, strlen(example)+1);
+    strncpy(ptr2, example2, strlen(example2)+1);
+    strncpy(ptr3, example2, strlen(example2)+1);
+    strncpy(ptr4, example2, strlen(example2)+1);
+
+    ff_free(ptr1);
     ff_free(ptr2);
-
     ff_free(ptr3);
-
     ff_free(ptr4);
+    
+    print_meta_blk_info();
+
+    uint8_t* ptr5 = ff_malloc(20);
+    uint8_t* ptr6 = ff_malloc(40);
+
+    strncpy(ptr5, example, strlen(example)+1);
+    strncpy(ptr6, example2, strlen(example2)+1);
+
+    printf("ptr5: %s\n", ptr5);
+    printf("ptr6: %s\n", ptr6);
 
     print_meta_blk_info();
 
