@@ -127,7 +127,7 @@ static void merge(META_BLK* node){
     total_blk_size += node->data_blk_size;
     ret = pre_blk != NULL ? pre_blk : node;
 
-    memset(GET_DATA_BLK(ret), 0x0, total_blk_size);
+    // memset(GET_DATA_BLK(ret), 0x0, total_blk_size);
     ret->data_blk_size = total_blk_size;
     ret->is_empty = true;
     ret->pre = pre_meta;
