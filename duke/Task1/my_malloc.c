@@ -101,6 +101,7 @@ static void merge(META_BLK* node){
     bool merge = false;
 
     if(pre_blk == NULL && next_blk == NULL){
+        
         return;
     }
 
@@ -119,6 +120,7 @@ static void merge(META_BLK* node){
     }
 
     if(!merge){
+
         return;
     }
 
@@ -247,7 +249,7 @@ void ff_free(void* addr){
 
             merge(ptr);
 
-            memset(GET_DATA_BLK(ptr), 0x0, ptr->data_blk_size);
+            // memset(GET_DATA_BLK(ptr), 0x0, ptr->data_blk_size);
             break;
         }
     ITERATE_LIST_END
