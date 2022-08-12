@@ -25,6 +25,14 @@
            for(; _node; _node = _node_next){    \
                 _node_next = _node->next;
 
+
+#define ITERATE_LIST_REVERSE_BEGIN(_node, tail) \
+        {                                       \
+           META_BLK* _node = (META_BLK*)tail;   \
+           META_BLK* _node_pre = NULL;          \
+           for(; _node; _node = _node_pre){     \
+                _node_pre = _node->pre;
+
 #define ITERATE_LIST_END }}
 
 #define GET_META_HEAD (META_BLK*)meta_blk_list.head

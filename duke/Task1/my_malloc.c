@@ -36,12 +36,24 @@ static void* get_vm_from_kernel(META_BLK_LIST* list){
 static void print_meta_blk_info(){
     #if (MY_DEBUG)
         META_BLK* head = GET_META_HEAD;
+        META_BLK* tail = NULL;
 
         ITERATE_LIST_BEGIN(ptr, head)
+            printf("[size: %d, is_empty: %d] <--> ", ptr->data_blk_size, ptr->is_empty);
+            if(ptr->next == NULL){
+
+                tail = ptr;
+            }
+        ITERATE_LIST_END
+
+        printf("NULL\n");
+
+        ITERATE_LIST_REVERSE_BEGIN(ptr, tail)
             printf("[size: %d, is_empty: %d] <--> ", ptr->data_blk_size, ptr->is_empty);
         ITERATE_LIST_END
 
         printf("NULL\n");
+
     #endif
 }
 
@@ -95,7 +107,7 @@ static void merge(META_BLK* node){
     META_BLK* next_blk = node->next;
     META_BLK* next_meta = node->next;
 
-    META_BLK* ret = NULL;
+    META_BLK* ret = node;
 
     uint32_t total_blk_size = 0;
     bool merge = false;
@@ -109,6 +121,7 @@ static void merge(META_BLK* node){
 
         total_blk_size += (pre_blk->data_blk_size + META_SIZE);
         pre_meta = pre_blk->pre;
+        ret = pre_blk;
         merge = true;
     }
 
@@ -125,13 +138,19 @@ static void merge(META_BLK* node){
     }
 
     total_blk_size += node->data_blk_size;
-    ret = pre_blk != NULL ? pre_blk : node;
 
-    // memset(GET_DATA_BLK(ret), 0x0, total_blk_size);
     ret->data_blk_size = total_blk_size;
     ret->is_empty = true;
+
     ret->pre = pre_meta;
+    if(pre_meta){
+        pre_meta->next = ret;
+    }
+
     ret->next = next_meta;
+    if(next_meta){
+        next_meta->pre = ret;
+    }
 }
 
 
@@ -246,10 +265,8 @@ void ff_free(void* addr){
             #endif
 
             ptr->is_empty = true;
-
             merge(ptr);
-
-            // memset(GET_DATA_BLK(ptr), 0x0, ptr->data_blk_size);
+            
             break;
         }
     ITERATE_LIST_END
