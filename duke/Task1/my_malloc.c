@@ -38,6 +38,7 @@ static void print_meta_blk_info(){
         META_BLK* head = GET_META_HEAD;
         META_BLK* tail = NULL;
 
+        printf("[Info]: ");
         ITERATE_LIST_BEGIN(ptr, head)
             printf("[size: %d, is_empty: %d] <--> ", ptr->data_blk_size, ptr->is_empty);
             if(ptr->next == NULL){
@@ -48,6 +49,7 @@ static void print_meta_blk_info(){
 
         printf("NULL\n");
 
+        printf("[Info]: ");
         ITERATE_LIST_REVERSE_BEGIN(ptr, tail)
             printf("[size: %d, is_empty: %d] <--> ", ptr->data_blk_size, ptr->is_empty);
         ITERATE_LIST_END
@@ -102,11 +104,7 @@ static void merge(META_BLK* node){
     }
 
     META_BLK* pre_blk = node->pre;
-    META_BLK* pre_meta = node->pre;
-
     META_BLK* next_blk = node->next;
-    META_BLK* next_meta = node->next;
-
     META_BLK* ret = node;
 
     uint32_t total_blk_size = 0;
@@ -120,15 +118,15 @@ static void merge(META_BLK* node){
     if(pre_blk != NULL && pre_blk->is_empty){
 
         total_blk_size += (pre_blk->data_blk_size + META_SIZE);
-        pre_meta = pre_blk->pre;
         ret = pre_blk;
+        pre_blk = pre_blk->pre;
         merge = true;
     }
 
     if(next_blk != NULL && next_blk->is_empty){
 
         total_blk_size += (next_blk->data_blk_size + META_SIZE);
-        next_meta = next_blk->next;
+        next_blk = next_blk->next;
         merge = true;
     }
 
@@ -142,14 +140,14 @@ static void merge(META_BLK* node){
     ret->data_blk_size = total_blk_size;
     ret->is_empty = true;
 
-    ret->pre = pre_meta;
-    if(pre_meta){
-        pre_meta->next = ret;
+    ret->pre = pre_blk;
+    if(pre_blk){
+        pre_blk->next = ret;
     }
 
-    ret->next = next_meta;
-    if(next_meta){
-        next_meta->pre = ret;
+    ret->next = next_blk;
+    if(next_blk){
+        next_blk->pre = ret;
     }
 }
 
@@ -266,7 +264,7 @@ void ff_free(void* addr){
 
             ptr->is_empty = true;
             merge(ptr);
-            
+
             break;
         }
     ITERATE_LIST_END
@@ -298,7 +296,7 @@ int main(int argc, char*argv[]){
 
     ff_free(ptr3);
 
-    // ff_free(ptr4);
+    ff_free(ptr4);
 
     print_meta_blk_info();
 
