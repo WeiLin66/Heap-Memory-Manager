@@ -318,17 +318,8 @@ void* bf_malloc(size_t size){
 void ff_free(void* addr){
 
     assert(addr);
-
     META_BLK* free_target = GET_META_BLK(addr);
-
-    ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
-        if(ptr == free_target){
-
-            ptr->is_empty = true;
-            merge(ptr);
-            return;
-        }
-    ITERATE_LIST_END
+    merge(free_target);
 }
 
 
@@ -336,18 +327,10 @@ void ff_free(void* addr){
  * best fit free func
  */ 
 void bf_free(void* addr){
+
     assert(addr);
-
     META_BLK* free_target = GET_META_BLK(addr);
-
-    ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
-        if(ptr == free_target){
-
-            ptr->is_empty = true;
-            merge(ptr);
-            return;
-        }
-    ITERATE_LIST_END
+    merge(free_target);
 }
 
 int main(int argc, char*argv[]){
