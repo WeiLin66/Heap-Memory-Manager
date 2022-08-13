@@ -185,7 +185,7 @@ static void* find_empty_blk(size_t size, bool version){
 
 
 /**
- * malloc alllocation func
+ * memory alllocation func
  */ 
 static void* memory_allocation_process(size_t size, bool version){
 
@@ -228,6 +228,17 @@ static void* memory_allocation_process(size_t size, bool version){
 
     return meta_blk_list.cur + META_SIZE;
 }
+
+
+/**
+ * memory free func
+ */ 
+static void memory_free_process(void* addr){
+
+    assert(addr);
+    META_BLK* free_target = GET_META_BLK(addr);
+    merge(free_target);
+} 
 
 
 /**
@@ -289,9 +300,7 @@ void* bf_malloc(size_t size){
  */ 
 void ff_free(void* addr){
 
-    assert(addr);
-    META_BLK* free_target = GET_META_BLK(addr);
-    merge(free_target);
+    memory_free_process(addr);
 }
 
 
@@ -300,9 +309,7 @@ void ff_free(void* addr){
  */ 
 void bf_free(void* addr){
 
-    assert(addr);
-    META_BLK* free_target = GET_META_BLK(addr);
-    merge(free_target);
+    memory_free_process(addr);
 }
 
 int main(int argc, char*argv[]){
