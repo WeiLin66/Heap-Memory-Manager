@@ -34,7 +34,7 @@ static void get_vm_from_kernel(META_BLK_LIST* list){
 static void print_meta_blk_info(){
     #if (MY_DEBUG)
 
-        printf("[Info]: ");
+        printf("\n[Info]: ");
         ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
             printf("[size: %d, is_empty: %d] --> ", ptr->data_blk_size, ptr->is_empty);
         ITERATE_LIST_END
@@ -47,6 +47,9 @@ static void print_meta_blk_info(){
         ITERATE_LIST_END
 
         printf("NULL\n");
+        printf("[Info] Largest Free Segment Size: %lu\n", get_largest_free_data_segment_size());
+        printf("[Info] Tatal Free Segment Size: %lu\n\n", get_total_free_size());
+
     #endif
 }
 
@@ -141,12 +144,14 @@ static void merge(META_BLK* node){
 /**
  * find any empty block in dll
  */ 
-static void* find_empty_blk(size_t size){
+static void* find_empty_blk(size_t size, bool version){
 
     if(meta_blk_list.cur == NULL){
 
         return NULL;
     }
+
+    META_BLK* best_fit_ptr = NULL;
 
     ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
         if(ptr->is_empty){
@@ -155,14 +160,63 @@ static void* find_empty_blk(size_t size){
 
                 ptr->is_empty = false;
                 return (uint8_t*)ptr + META_SIZE;
-            }else if(ptr->data_blk_size > META_SIZE + size){
+            }else if(!version && ptr->data_blk_size > META_SIZE + size){
 
                 return split(ptr, size);
+            }else if(version && ptr->data_blk_size > META_SIZE + size){
+
+                if(!best_fit_ptr){
+                    best_fit_ptr = ptr;
+                    continue;
+                }
+
+                best_fit_ptr = best_fit_ptr->data_blk_size > ptr->data_blk_size ? ptr : best_fit_ptr;
             }
         }
-    ITERATE_LIST_END   
+    ITERATE_LIST_END
+
+    if(version && best_fit_ptr){
+
+        return split(best_fit_ptr, size);
+    }   
 
     return NULL;
+}
+
+
+/**
+ * find the largest free segment in the current dll
+ */ 
+unsigned long get_largest_free_data_segment_size(){
+
+    uint32_t ret = 0;
+
+    ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
+        if(ptr->is_empty){
+
+            ret = ptr->data_blk_size > ret ? ptr->data_blk_size : ret;
+        }
+    ITERATE_LIST_END
+
+    return ret;
+}
+
+
+/**
+ * get total free segment size in the current dll
+ */ 
+unsigned long get_total_free_size(){
+
+    uint32_t ret = 0;
+
+    ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
+        if(ptr->is_empty){
+
+            ret += ptr->data_blk_size;
+        }
+    ITERATE_LIST_END
+
+    return ret;
 }
 
 
@@ -180,7 +234,7 @@ void* ff_malloc(size_t size){
         get_vm_from_kernel(&meta_blk_list);
     }
 
-    if((find_empty_blk_res = find_empty_blk(size))){
+    if((find_empty_blk_res = find_empty_blk(size, First_Fit))){
 
         return find_empty_blk_res;
     }
@@ -195,10 +249,54 @@ void* ff_malloc(size_t size){
     }
 
     META_BLK* new_meta = meta_blk_list.cur == NULL ? GET_META_HEAD : (META_BLK*)(meta_blk_list.cur + curr_blk_length);
+    memset(new_meta, 0x0, META_SIZE);
     new_meta->data_blk_size = size;
-    new_meta->is_empty = false;
-    new_meta->pre = NULL;
-    new_meta->next = NULL;
+
+    if(new_meta != GET_META_HEAD){
+
+        new_meta->pre = GET_META_CUR;
+        GET_META_CUR->next = new_meta;
+        meta_blk_list.cur = (uint8_t*)new_meta;
+    }else{
+
+        meta_blk_list.cur = (uint8_t*)GET_META_HEAD;
+    }
+
+    return meta_blk_list.cur + META_SIZE;
+}
+
+
+/**
+ * best fit malloc func
+ */ 
+void* bf_malloc(size_t size){
+
+    uint32_t total_blk_length = size + META_SIZE;
+    uint32_t curr_blk_length = 0;
+    META_BLK* find_empty_blk_res = NULL;
+
+    if(meta_blk_list.head == NULL && meta_blk_list.cur == NULL){
+
+        get_vm_from_kernel(&meta_blk_list);
+    }
+
+    if((find_empty_blk_res = find_empty_blk(size, Best_Fit))){
+
+        return find_empty_blk_res;
+    }
+
+    if(meta_blk_list.cur != NULL){
+
+        curr_blk_length = GET_META_CUR->data_blk_size + META_SIZE;
+        if(meta_blk_list.cur + curr_blk_length + total_blk_length > meta_blk_list.tail){
+
+            get_vm_from_kernel(&meta_blk_list);
+        }
+    }
+
+    META_BLK* new_meta = meta_blk_list.cur == NULL ? GET_META_HEAD : (META_BLK*)(meta_blk_list.cur + curr_blk_length);
+    memset(new_meta, 0x0, META_SIZE);
+    new_meta->data_blk_size = size;
 
     if(new_meta != GET_META_HEAD){
 
@@ -219,14 +317,26 @@ void* ff_malloc(size_t size){
  */ 
 void ff_free(void* addr){
 
-    if(addr == NULL){
+    assert(addr);
 
-        #if (MY_DEBUG)
-            printf("[Error]: Address is NULL!\n");
-        #endif
+    META_BLK* free_target = GET_META_BLK(addr);
 
-        return;
-    }
+    ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
+        if(ptr == free_target){
+
+            ptr->is_empty = true;
+            merge(ptr);
+            return;
+        }
+    ITERATE_LIST_END
+}
+
+
+/**
+ * best fit free func
+ */ 
+void bf_free(void* addr){
+    assert(addr);
 
     META_BLK* free_target = GET_META_BLK(addr);
 
@@ -245,10 +355,10 @@ int main(int argc, char*argv[]){
     char example[] = "simple test";
     char example2[] = "new data";
 
-    char* ptr1 = ff_malloc(20);
-    char* ptr2 = ff_malloc(30);
-    char* ptr3 = ff_malloc(40);
-    char* ptr4 = ff_malloc(50);
+    char* ptr1 = bf_malloc(30);
+    char* ptr2 = bf_malloc(30);
+    char* ptr3 = bf_malloc(40);
+    char* ptr4 = bf_malloc(50);
 
     strncpy(ptr1, example, strlen(example)+1);
     strncpy(ptr2, example2, strlen(example2)+1);
@@ -257,17 +367,17 @@ int main(int argc, char*argv[]){
     
     print_meta_blk_info();
 
-    char* ptr5 = ff_malloc(100);
+    char* ptr5 = bf_malloc(100);
 
     strncpy(ptr5, example, strlen(example)+1);
 
-    ff_free(ptr1);
-    ff_free(ptr2);
-    ff_free(ptr4);
+    bf_free(ptr1);
+    bf_free(ptr2);
+    bf_free(ptr4);
 
     print_meta_blk_info();
 
-    char* ptr6 = ff_malloc(46);
+    char* ptr6 = bf_malloc(50);
 
     strncpy(ptr6, example2, strlen(example2)+1);
 

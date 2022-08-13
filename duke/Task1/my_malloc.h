@@ -12,7 +12,7 @@
 
 #define DEBUG_ON    1
 #define DEBUG_OFF   0
-#define MY_DEBUG    DEBUG_ON
+#define MY_DEBUG    DEBUG_OFF
 
 #define GET_VM_SIZE 1024
 #define META_SIZE   sizeof(META_BLK)
@@ -45,6 +45,7 @@
 #define NEXT_SPLIT_META(addr, size) (META_BLK*)((uint8_t*)addr + META_SIZE + size)
 
 typedef struct _META_BLK{
+
     uint32_t data_blk_size;
     bool is_empty;
     struct _META_BLK* pre;
@@ -52,14 +53,23 @@ typedef struct _META_BLK{
 }META_BLK;
 
 typedef struct _META_BLK_LIST{
+
     uint8_t* head;
     uint8_t* cur;
     uint8_t* tail;
 }META_BLK_LIST;
 
+typedef enum _MALLOC_VERSION{
+
+    First_Fit = 0,
+    Best_Fit = 1
+}MALLOC_VERSION;
+
 void* ff_malloc(size_t size);
 void ff_free(void* addr);
 void* bf_malloc(size_t size);
 void bf_free(void* addr);
+unsigned long get_largest_free_data_segment_size();//in bytes
+unsigned long get_total_free_size();//in bytes
 
 #endif /* __MY_MALLOC_H_ */
