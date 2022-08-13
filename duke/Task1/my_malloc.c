@@ -2,6 +2,7 @@
 
 META_LIST_INIT(meta_blk_list);
 
+
 /**
  * Get Virtual Memory form kernel
  */ 
@@ -36,14 +37,14 @@ static void print_meta_blk_info(){
 
         printf("\n[Info]: ");
         ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
-            printf("[size: %d, is_empty: %d] --> ", ptr->data_blk_size, ptr->is_empty);
+            printf("[size: %d, is_free: %d] --> ", ptr->data_blk_size, ptr->is_free);
         ITERATE_LIST_END
 
         printf("NULL\n");
 
         printf("[Info]: ");
         ITERATE_LIST_REVERSE_BEGIN(ptr, GET_META_CUR)
-            printf("[size: %d, is_empty: %d] --> ", ptr->data_blk_size, ptr->is_empty);
+            printf("[size: %d, is_free: %d] --> ", ptr->data_blk_size, ptr->is_free);
         ITERATE_LIST_END
 
         printf("NULL\n");
@@ -65,19 +66,13 @@ static void* split(META_BLK* node, size_t size){
 
     uint32_t original_size = node->data_blk_size;
 
-    node->data_blk_size = size;
     META_BLK* new_meta = NEXT_SPLIT_META(node, size);
+    node->data_blk_size = size;
     new_meta->data_blk_size = original_size - (META_SIZE + size);
-    new_meta->is_empty = true;
-    
-    new_meta->next = node->next;
-    if(node->next){
-        node->next->pre = new_meta;
-    }
-    new_meta->pre = node;
+    new_meta->is_free = true;
+    node->is_free = false;
 
-    node->next = new_meta;
-    node->is_empty = false;
+    BLIND_BLKS_FOR_SPLITING(node, new_meta);
 
     return (uint8_t*)node + META_SIZE;
 }
@@ -100,7 +95,7 @@ static void merge(META_BLK* node){
         return;
     }
 
-    if(pre_blk != NULL && pre_blk->is_empty){
+    if(pre_blk != NULL && pre_blk->is_free){
 
         total_blk_size += (pre_blk->data_blk_size + META_SIZE);
         ret = pre_blk;
@@ -108,7 +103,7 @@ static void merge(META_BLK* node){
         merge = true;
     }
 
-    if(next_blk != NULL && next_blk->is_empty){
+    if(next_blk != NULL && next_blk->is_free){
 
         total_blk_size += (next_blk->data_blk_size + META_SIZE);
         next_blk = next_blk->next;
@@ -123,7 +118,7 @@ static void merge(META_BLK* node){
     total_blk_size += node->data_blk_size;
 
     ret->data_blk_size = total_blk_size;
-    ret->is_empty = true;
+    ret->is_free = true;
 
     ret->pre = pre_blk;
     if(pre_blk){
@@ -154,11 +149,11 @@ static void* find_empty_blk(size_t size, bool version){
     META_BLK* best_fit_ptr = NULL;
 
     ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
-        if(ptr->is_empty){
+        if(ptr->is_free){
             
             if(ptr->data_blk_size == size){
 
-                ptr->is_empty = false;
+                ptr->is_free = false;
                 return (uint8_t*)ptr + META_SIZE;
             }else if(!version && ptr->data_blk_size > META_SIZE + size){
 
@@ -187,7 +182,7 @@ static void* find_empty_blk(size_t size, bool version){
 /**
  * memory alllocation func
  */ 
-static void* memory_allocation_process(size_t size, bool version){
+static void* memory_allocation_process(size_t size, MALLOC_VERSION version){
 
     uint32_t total_blk_length = size + META_SIZE;
     uint32_t curr_blk_length = 0;
@@ -249,7 +244,7 @@ unsigned long get_largest_free_data_segment_size(){
     uint32_t ret = 0;
 
     ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
-        if(ptr->is_empty){
+        if(ptr->is_free){
 
             ret = ptr->data_blk_size > ret ? ptr->data_blk_size : ret;
         }
@@ -267,7 +262,7 @@ unsigned long get_total_free_size(){
     uint32_t ret = 0;
 
     ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
-        if(ptr->is_empty){
+        if(ptr->is_free){
 
             ret += ptr->data_blk_size;
         }

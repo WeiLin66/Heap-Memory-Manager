@@ -3,8 +3,9 @@
 static size_t SYSTEM_PAGE_SIZE = 0;
 static vm_page_family_list_t *first_vm_page_for_family = NULL;
 
+
 /**
- * 獲取VM Page Size
+ * get VM Page Size
  */ 
 void mm_init(){
 
@@ -13,7 +14,7 @@ void mm_init(){
 
 
 /**
- * 向kernel申請VM Page
+ * request VM Page from kernel
  */ 
 static void* mm_get_vm_page(uint32_t units){
 
@@ -50,7 +51,7 @@ static void* mm_get_vm_page(uint32_t units){
 
 
 /**
- * 釋放VM Page
+ * release VM Page
  */ 
 static void mm_release_vm_page(void* vm_page, uint32_t units){
 
@@ -77,7 +78,23 @@ static void mm_release_vm_page(void* vm_page, uint32_t units){
 
 
 /**
- * 實例化結構體信息，並存放到VM Page中
+ * union two free blocks
+ */ 
+static void mm_union_free_blocks(meta_blk_t* first, meta_blk_t* second){
+
+    assert(first->is_free == MM_TRUE && second->is_free == MM_TRUE);
+
+    first->data_blk_size += META_SIZE + second->data_blk_size;
+    first->next_blk = second->next_blk;
+    if(first->next_blk){
+
+        first->next_blk->pre_blk = first;
+    }
+}
+
+
+/**
+ * instantiate structure info and store it into VM Page 
  */ 
 void mm_instantiate_new_page_family(char* struct_name, uint32_t struct_size){
 
@@ -120,7 +137,7 @@ void mm_instantiate_new_page_family(char* struct_name, uint32_t struct_size){
 
 
 /**
- * 遍歷所有vm_page_family_list_t中存放的結構體信息
+ * iterate and print out structure messages
  */ 
 void mm_print_registered_page_families(){
 
@@ -153,7 +170,7 @@ void mm_print_registered_page_families(){
 
 
 /**
- * 尋找vm_page_family_list_t中是否存在名為struct_name結構體
+ * find particular struct_name within vm_page_family_list_t
  */ 
 vm_page_family_t* lookup_page_family_by_name(char *struct_name){
 
@@ -183,7 +200,7 @@ vm_page_family_t* lookup_page_family_by_name(char *struct_name){
 
 
 /**
- * 測試用function 
+ * test function 
  */
 void mm_debug_fn(){
     

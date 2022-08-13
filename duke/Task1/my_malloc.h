@@ -36,6 +36,13 @@
 
 #define ITERATE_LIST_END }}
 
+#define BLIND_BLKS_FOR_SPLITING(allocated_meta_block, free_meta_block)      \
+            allocated_meta_block->next = free_meta_block;                   \
+            free_meta_block->pre = allocated_meta_block;                    \
+            free_meta_block->next = allocated_meta_block->next;             \
+            if(free_meta_block->next)                                       \
+                free_meta_block->next->pre = free_meta_block                           
+
 #define GET_META_HEAD ((META_BLK*)meta_blk_list.head)
 #define GET_META_CUR ((META_BLK*)meta_blk_list.cur)
 #define GET_META_TAIL ((META_BLK*)meta_blk_list.tail)
@@ -47,7 +54,7 @@
 typedef struct _META_BLK{
 
     uint32_t data_blk_size;
-    bool is_empty;
+    bool is_free;
     struct _META_BLK* pre;
     struct _META_BLK* next;
 }META_BLK;
@@ -69,7 +76,7 @@ void* ff_malloc(size_t size);
 void ff_free(void* addr);
 void* bf_malloc(size_t size);
 void bf_free(void* addr);
-unsigned long get_largest_free_data_segment_size();//in bytes
-unsigned long get_total_free_size();//in bytes
+unsigned long get_largest_free_data_segment_size(); //in bytes
+unsigned long get_total_free_size(); //in bytes
 
 #endif /* __MY_MALLOC_H_ */

@@ -15,7 +15,10 @@
 
 /* Free VM Page size that can be use */
 #define MAX_FAMILY_PER_PAGE (SYSTEM_PAGE_SIZE - sizeof(vm_page_family_list_t*)) / sizeof(vm_page_family_t)
-                                   
+
+/* the offset of a particular field_name */ 
+#define OFFSET_OF(container_structure, field_name) (size_t)&(((container_structure*)0)->field_name)
+#define META_SIZE sizeof(meta_blk_t)                                  
 
 /* Iterative macro for searching the VM Page from bottom to top */
 #define ITERATE_PAGE_FAMILIES_BEGIN(vm_page_for_families_ptr, curr)          \
@@ -27,8 +30,26 @@
                 break;                                                       \
             }                                                                
         
-
 #define ITERATE_PAGE_FAMILIES_END }}
+
+#define MM_GET_PAGE_FROM_META_BLOCK(meta_blk_ptr) (void*)((uint8_t*)meta_blk_ptr - meta_blk_ptr->offset)
+#define NEXT_META_BLOCK(meta_blk_ptr) (((meta_blk_t*)meta_blk_ptr)->next_blk)
+#define PREV_META_BLOCK(meta_blk_ptr) (((meta_blk_t*)meta_blk_ptr)->pre_blk)
+#define NEXT_META_BLOCK_BY_SIZE(meta_blk_ptr) \
+            (meta_blk_t*)((uint8_t*)((meta_blk_t*)meta_blk_ptr + 1) + meta_blk_ptr->data_blk_size)
+
+#define MM_BLIND_BLKS_FOR_ALLOCATION(allocated_meta_block, free_meta_block)     \
+            allocated_meta_block->next_blk = free_meta_block;                   \
+            free_meta_block->pre_blk = allocated_meta_block;                    \
+            free_meta_block->next_blk = allocated_meta_block->next_blk;         \
+            if(free_meta_block->next_blk)                                       \
+                free_meta_block->next_blk->pre_blk = free_meta_block           
+
+typedef enum{
+
+    MM_FALSE,
+    MM_TRUE
+}vm_bool_t;
 
 typedef struct _vm_page_family{
 
@@ -41,6 +62,15 @@ typedef struct _vm_page_family_list{
     struct _vm_page_family_list* next;
     vm_page_family_t vm_page[0];
 }vm_page_family_list_t;
+
+typedef struct _meta_blk{
+
+    uint32_t data_blk_size;
+    uint32_t offset;
+    vm_bool_t is_free;
+    struct _meta_blk* pre_blk;
+    struct _meta_blk* next_blk;
+}meta_blk_t;
 
 void mm_init(void);
 void mm_debug_fn(void);
