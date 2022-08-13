@@ -185,6 +185,52 @@ static void* find_empty_blk(size_t size, bool version){
 
 
 /**
+ * malloc alllocation func
+ */ 
+static void* memory_allocation_process(size_t size, bool version){
+
+    uint32_t total_blk_length = size + META_SIZE;
+    uint32_t curr_blk_length = 0;
+    META_BLK* find_empty_blk_res = NULL;
+
+    if(meta_blk_list.head == NULL && meta_blk_list.cur == NULL){
+
+        get_vm_from_kernel(&meta_blk_list);
+    }
+
+    if((find_empty_blk_res = find_empty_blk(size, version))){
+
+        return find_empty_blk_res;
+    }
+
+    if(meta_blk_list.cur != NULL){
+
+        curr_blk_length = GET_META_CUR->data_blk_size + META_SIZE;
+        if(meta_blk_list.cur + curr_blk_length + total_blk_length > meta_blk_list.tail){
+
+            get_vm_from_kernel(&meta_blk_list);
+        }
+    }
+
+    META_BLK* new_meta = meta_blk_list.cur == NULL ? GET_META_HEAD : (META_BLK*)(meta_blk_list.cur + curr_blk_length);
+    memset(new_meta, 0x0, META_SIZE);
+    new_meta->data_blk_size = size;
+
+    if(new_meta != GET_META_HEAD){
+
+        new_meta->pre = GET_META_CUR;
+        GET_META_CUR->next = new_meta;
+        meta_blk_list.cur = (uint8_t*)new_meta;
+    }else{
+
+        meta_blk_list.cur = (uint8_t*)GET_META_HEAD;
+    }
+
+    return meta_blk_list.cur + META_SIZE;
+}
+
+
+/**
  * find the largest free segment in the current dll
  */ 
 unsigned long get_largest_free_data_segment_size(){
@@ -225,44 +271,7 @@ unsigned long get_total_free_size(){
  */ 
 void* ff_malloc(size_t size){
 
-    uint32_t total_blk_length = size + META_SIZE;
-    uint32_t curr_blk_length = 0;
-    META_BLK* find_empty_blk_res = NULL;
-
-    if(meta_blk_list.head == NULL && meta_blk_list.cur == NULL){
-
-        get_vm_from_kernel(&meta_blk_list);
-    }
-
-    if((find_empty_blk_res = find_empty_blk(size, First_Fit))){
-
-        return find_empty_blk_res;
-    }
-
-    if(meta_blk_list.cur != NULL){
-
-        curr_blk_length = GET_META_CUR->data_blk_size + META_SIZE;
-        if(meta_blk_list.cur + curr_blk_length + total_blk_length > meta_blk_list.tail){
-
-            get_vm_from_kernel(&meta_blk_list);
-        }
-    }
-
-    META_BLK* new_meta = meta_blk_list.cur == NULL ? GET_META_HEAD : (META_BLK*)(meta_blk_list.cur + curr_blk_length);
-    memset(new_meta, 0x0, META_SIZE);
-    new_meta->data_blk_size = size;
-
-    if(new_meta != GET_META_HEAD){
-
-        new_meta->pre = GET_META_CUR;
-        GET_META_CUR->next = new_meta;
-        meta_blk_list.cur = (uint8_t*)new_meta;
-    }else{
-
-        meta_blk_list.cur = (uint8_t*)GET_META_HEAD;
-    }
-
-    return meta_blk_list.cur + META_SIZE;
+    return memory_allocation_process(size, First_Fit);
 }
 
 
@@ -271,44 +280,7 @@ void* ff_malloc(size_t size){
  */ 
 void* bf_malloc(size_t size){
 
-    uint32_t total_blk_length = size + META_SIZE;
-    uint32_t curr_blk_length = 0;
-    META_BLK* find_empty_blk_res = NULL;
-
-    if(meta_blk_list.head == NULL && meta_blk_list.cur == NULL){
-
-        get_vm_from_kernel(&meta_blk_list);
-    }
-
-    if((find_empty_blk_res = find_empty_blk(size, Best_Fit))){
-
-        return find_empty_blk_res;
-    }
-
-    if(meta_blk_list.cur != NULL){
-
-        curr_blk_length = GET_META_CUR->data_blk_size + META_SIZE;
-        if(meta_blk_list.cur + curr_blk_length + total_blk_length > meta_blk_list.tail){
-
-            get_vm_from_kernel(&meta_blk_list);
-        }
-    }
-
-    META_BLK* new_meta = meta_blk_list.cur == NULL ? GET_META_HEAD : (META_BLK*)(meta_blk_list.cur + curr_blk_length);
-    memset(new_meta, 0x0, META_SIZE);
-    new_meta->data_blk_size = size;
-
-    if(new_meta != GET_META_HEAD){
-
-        new_meta->pre = GET_META_CUR;
-        GET_META_CUR->next = new_meta;
-        meta_blk_list.cur = (uint8_t*)new_meta;
-    }else{
-
-        meta_blk_list.cur = (uint8_t*)GET_META_HEAD;
-    }
-
-    return meta_blk_list.cur + META_SIZE;
+    return memory_allocation_process(size, Best_Fit);
 }
 
 
@@ -334,37 +306,6 @@ void bf_free(void* addr){
 }
 
 int main(int argc, char*argv[]){
-    
-    char example[] = "simple test";
-    char example2[] = "new data";
-
-    char* ptr1 = bf_malloc(30);
-    char* ptr2 = bf_malloc(30);
-    char* ptr3 = bf_malloc(40);
-    char* ptr4 = bf_malloc(50);
-
-    strncpy(ptr1, example, strlen(example)+1);
-    strncpy(ptr2, example2, strlen(example2)+1);
-    strncpy(ptr3, example2, strlen(example2)+1);
-    strncpy(ptr4, example2, strlen(example2)+1);
-    
-    print_meta_blk_info();
-
-    char* ptr5 = bf_malloc(100);
-
-    strncpy(ptr5, example, strlen(example)+1);
-
-    bf_free(ptr1);
-    bf_free(ptr2);
-    bf_free(ptr4);
-
-    print_meta_blk_info();
-
-    char* ptr6 = bf_malloc(50);
-
-    strncpy(ptr6, example2, strlen(example2)+1);
-
-    print_meta_blk_info();
 
     return 0;
 }
