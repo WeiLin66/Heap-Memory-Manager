@@ -1,13 +1,11 @@
 #include "my_malloc.h"
 
 META_LIST_INIT(meta_blk_list);
-static META_BLK meta_blk_ll = {0};
-
 
 /**
  * Get Virtual Memory form kernel
  */ 
-static void* get_vm_from_kernel(META_BLK_LIST* list){
+static void get_vm_from_kernel(META_BLK_LIST* list){
 
     void* get_mem = NULL;
 
@@ -17,7 +15,7 @@ static void* get_vm_from_kernel(META_BLK_LIST* list){
             printf("[Info]: First get Virtual Memoey from kernel!\n");
         #endif
         get_mem = sbrk(0);
-        list->head = list->cur = list->tail = get_mem;
+        list->head = list->tail = get_mem;
     }
 
     get_mem = sbrk(GET_VM_SIZE);
@@ -35,16 +33,17 @@ static void* get_vm_from_kernel(META_BLK_LIST* list){
  */ 
 static void print_meta_blk_info(){
     #if (MY_DEBUG)
-        META_BLK* head = GET_META_HEAD;
-        META_BLK* tail = NULL;
 
         printf("[Info]: ");
-        ITERATE_LIST_BEGIN(ptr, head)
-            printf("[size: %d, is_empty: %d] <--> ", ptr->data_blk_size, ptr->is_empty);
-            if(ptr->next == NULL){
+        ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
+            printf("[size: %d, is_empty: %d] --> ", ptr->data_blk_size, ptr->is_empty);
+        ITERATE_LIST_END
 
-                tail = ptr;
-            }
+        printf("NULL\n");
+
+        printf("[Info]: ");
+        ITERATE_LIST_REVERSE_BEGIN(ptr, GET_META_CUR)
+            printf("[size: %d, is_empty: %d] --> ", ptr->data_blk_size, ptr->is_empty);
         ITERATE_LIST_END
 
         printf("NULL\n");
@@ -57,15 +56,6 @@ static void print_meta_blk_info(){
  */ 
 static void* split(META_BLK* node, size_t size){
 
-    if(node == NULL){
-
-        #if (MY_DEBUG)
-            printf("[Error]: Meta Block can't be NULL!\n");
-        #endif
-
-        return NULL;
-    }
-
     #if (MY_DEBUG)
         printf("[Info]: Split Block!\n");
     #endif
@@ -74,10 +64,15 @@ static void* split(META_BLK* node, size_t size){
 
     node->data_blk_size = size;
     META_BLK* new_meta = NEXT_SPLIT_META(node, size);
-    new_meta->data_blk_size = original_size - size - META_SIZE;
+    new_meta->data_blk_size = original_size - (META_SIZE + size);
     new_meta->is_empty = true;
     
     new_meta->next = node->next;
+    if(node->next){
+        node->next->pre = new_meta;
+    }
+    new_meta->pre = node;
+
     node->next = new_meta;
     node->is_empty = false;
 
@@ -89,15 +84,6 @@ static void* split(META_BLK* node, size_t size){
  * merge free data blocks
  */ 
 static void merge(META_BLK* node){
-
-    if(node == NULL){
-
-        #if (MY_DEBUG)
-            printf("[Error]: Merge Block can't be NULL!\n");
-        #endif
-
-        return;        
-    }
 
     META_BLK* pre_blk = node->pre;
     META_BLK* next_blk = node->next;
@@ -157,19 +143,12 @@ static void merge(META_BLK* node){
  */ 
 static void* find_empty_blk(size_t size){
 
-    if(meta_blk_list.head == NULL && meta_blk_list.cur == NULL){
+    if(meta_blk_list.cur == NULL){
 
         return NULL;
     }
 
-    if(meta_blk_list.head == meta_blk_list.cur){
-
-        return NULL;
-    }
-
-    META_BLK* head = GET_META_HEAD;
-
-    ITERATE_LIST_BEGIN(ptr, head)
+    ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
         if(ptr->is_empty){
             
             if(ptr->data_blk_size == size){
@@ -193,48 +172,45 @@ static void* find_empty_blk(size_t size){
 void* ff_malloc(size_t size){
 
     uint32_t total_blk_length = size + META_SIZE;
-    META_BLK* head = GET_META_HEAD;
+    uint32_t curr_blk_length = 0;
     META_BLK* find_empty_blk_res = NULL;
-    META_BLK* tail = NULL;
 
     if(meta_blk_list.head == NULL && meta_blk_list.cur == NULL){
 
         get_vm_from_kernel(&meta_blk_list);
     }
 
-    find_empty_blk_res = find_empty_blk(size);
-    if(find_empty_blk_res){
+    if((find_empty_blk_res = find_empty_blk(size))){
 
         return find_empty_blk_res;
     }
 
-    if(meta_blk_list.cur + total_blk_length >= meta_blk_list.tail){
+    if(meta_blk_list.cur != NULL){
 
-        get_vm_from_kernel(&meta_blk_list);
+        curr_blk_length = GET_META_CUR->data_blk_size + META_SIZE;
+        if(meta_blk_list.cur + curr_blk_length + total_blk_length > meta_blk_list.tail){
+
+            get_vm_from_kernel(&meta_blk_list);
+        }
     }
 
-    META_BLK* new_meta = GET_META_CUR;
+    META_BLK* new_meta = meta_blk_list.cur == NULL ? GET_META_HEAD : (META_BLK*)(meta_blk_list.cur + curr_blk_length);
     new_meta->data_blk_size = size;
     new_meta->is_empty = false;
     new_meta->pre = NULL;
     new_meta->next = NULL;
 
-    ITERATE_LIST_BEGIN(ptr, head)
-        if(ptr->next == NULL){
+    if(new_meta != GET_META_HEAD){
 
-            tail = ptr;
-        }
-    ITERATE_LIST_END
+        new_meta->pre = GET_META_CUR;
+        GET_META_CUR->next = new_meta;
+        meta_blk_list.cur = (uint8_t*)new_meta;
+    }else{
 
-    if(tail){
-
-        tail->next = new_meta;
-        new_meta->pre = tail;
+        meta_blk_list.cur = (uint8_t*)GET_META_HEAD;
     }
 
-    meta_blk_list.cur += total_blk_length;
-
-    return meta_blk_list.cur - size;
+    return meta_blk_list.cur + META_SIZE;
 }
 
 
@@ -253,9 +229,8 @@ void ff_free(void* addr){
     }
 
     META_BLK* free_target = GET_META_BLK(addr);
-    META_BLK* head = GET_META_HEAD;
 
-    ITERATE_LIST_BEGIN(ptr, head)
+    ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
         if(ptr == free_target){
 
             ptr->is_empty = true;
@@ -270,36 +245,31 @@ int main(int argc, char*argv[]){
     char example[] = "simple test";
     char example2[] = "new data";
 
-    uint8_t* ptr1 = ff_malloc(20);
-    uint8_t* ptr2 = ff_malloc(30);
-    uint8_t* ptr3 = ff_malloc(40);
-    uint8_t* ptr4 = ff_malloc(50);
-
-    printf("ptr1: %p\n", ptr1); 
-    printf("ptr2: %p\n", ptr2);
-    printf("ptr3: %p\n", ptr3);
-    printf("ptr4: %p\n", ptr4);
+    char* ptr1 = ff_malloc(20);
+    char* ptr2 = ff_malloc(30);
+    char* ptr3 = ff_malloc(40);
+    char* ptr4 = ff_malloc(50);
 
     strncpy(ptr1, example, strlen(example)+1);
     strncpy(ptr2, example2, strlen(example2)+1);
     strncpy(ptr3, example2, strlen(example2)+1);
     strncpy(ptr4, example2, strlen(example2)+1);
-
-    ff_free(ptr1);
-    ff_free(ptr2);
-    ff_free(ptr3);
-    ff_free(ptr4);
     
     print_meta_blk_info();
 
-    uint8_t* ptr5 = ff_malloc(20);
-    uint8_t* ptr6 = ff_malloc(40);
+    char* ptr5 = ff_malloc(100);
 
     strncpy(ptr5, example, strlen(example)+1);
-    strncpy(ptr6, example2, strlen(example2)+1);
 
-    printf("ptr5: %s\n", ptr5);
-    printf("ptr6: %s\n", ptr6);
+    ff_free(ptr1);
+    ff_free(ptr2);
+    ff_free(ptr4);
+
+    print_meta_blk_info();
+
+    char* ptr6 = ff_malloc(46);
+
+    strncpy(ptr6, example2, strlen(example2)+1);
 
     print_meta_blk_info();
 
