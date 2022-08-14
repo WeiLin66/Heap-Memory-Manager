@@ -33,8 +33,8 @@ static void get_vm_from_kernel(META_BLK_LIST* list){
  * print all dll info
  */ 
 static void print_meta_blk_info(){
-    #if (MY_DEBUG)
 
+    #if (MY_DEBUG)
         printf("\n[Info]: ");
         ITERATE_LIST_BEGIN(ptr, GET_META_HEAD)
             printf("[size: %d, is_free: %d] --> ", ptr->data_blk_size, ptr->is_free);
@@ -50,7 +50,6 @@ static void print_meta_blk_info(){
         printf("NULL\n");
         printf("[Info] Largest Free Segment Size: %lu\n", get_largest_free_data_segment_size());
         printf("[Info] Tatal Free Segment Size: %lu\n\n", get_total_free_size());
-
     #endif
 }
 
@@ -65,8 +64,8 @@ static void* split(META_BLK* node, size_t size){
     #endif
 
     uint32_t original_size = node->data_blk_size;
-
     META_BLK* new_meta = NEXT_SPLIT_META(node, size);
+
     node->data_blk_size = size;
     new_meta->data_blk_size = original_size - (META_SIZE + size);
     new_meta->is_free = true;

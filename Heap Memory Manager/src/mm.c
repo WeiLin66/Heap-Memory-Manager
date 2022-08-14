@@ -19,6 +19,7 @@ void mm_init(){
 static void* mm_get_vm_page(uint32_t units){
 
     if(SYSTEM_PAGE_SIZE == 0){
+
         #if MM_DEBUG
             printf("System Page is 0!\n");
         #endif
@@ -33,6 +34,7 @@ static void* mm_get_vm_page(uint32_t units){
     uint8_t* vm_page = mmap(0, length, prot, flag, 0, 0);
 
     if(vm_page == MAP_FAILED){
+
         #if MM_DEBUG
             printf("Fail to mmap VM page from kernel!\n");
         #endif
@@ -56,6 +58,7 @@ static void* mm_get_vm_page(uint32_t units){
 static void mm_release_vm_page(void* vm_page, uint32_t units){
 
     if(SYSTEM_PAGE_SIZE == 0){
+
         #if MM_DEBUG
             printf("System Page is 0!\n");
         #endif
@@ -66,6 +69,7 @@ static void mm_release_vm_page(void* vm_page, uint32_t units){
     size_t length = units * SYSTEM_PAGE_SIZE;
 
     if(munmap(vm_page, length) == -1){
+
         #if MM_DEBUG
             printf("Fail to munmap VM page to kernel!\n");
         #endif
@@ -99,7 +103,10 @@ static void mm_union_free_blocks(meta_blk_t* first, meta_blk_t* second){
 void mm_instantiate_new_page_family(char* struct_name, uint32_t struct_size){
 
     if(struct_size > SYSTEM_PAGE_SIZE){
-        printf("%s() can not instantiate size that exceeds %ld bytes!\n", __FUNCTION__, SYSTEM_PAGE_SIZE);
+
+        #if MM_DEBUG
+            printf("%s() can not instantiate size that exceeds %ld bytes!\n", __FUNCTION__, SYSTEM_PAGE_SIZE);
+        #endif
         return;
     }
 
@@ -117,6 +124,10 @@ void mm_instantiate_new_page_family(char* struct_name, uint32_t struct_size){
     ITERATE_PAGE_FAMILIES_BEGIN(first_vm_page_for_family, current_family)
 
         if(strncmp(current_family->struct_name, struct_name, MAX_NAME_LEN) == 0){
+
+            #if MM_DEBUG
+                printf("same structure %s!\n", struct_name);
+            #endif
 
             assert(0);
         }
@@ -143,7 +154,9 @@ void mm_print_registered_page_families(){
 
     if(first_vm_page_for_family == NULL){
 
-        printf("first_vm_page_for_family should be instantiated first!\n");
+        #if MM_DEBUG
+            printf("first_vm_page_for_family should be instantiated first!\n");
+        #endif
         return;
     }
 
@@ -154,7 +167,6 @@ void mm_print_registered_page_families(){
     while(list_ptr){
 
         printf("VM%d: \n", vm_number);
-
         ITERATE_PAGE_FAMILIES_BEGIN(list_ptr, current_family)
 
             printf("Struct Name: %s, Struct Size: %d\n", current_family->struct_name, current_family->struct_size);
@@ -175,8 +187,10 @@ void mm_print_registered_page_families(){
 vm_page_family_t* lookup_page_family_by_name(char *struct_name){
 
     if(first_vm_page_for_family == NULL){
-
-        printf("first_vm_page_for_family should be instantiated first!\n");
+        
+        #if MM_DEBUG
+            printf("first_vm_page_for_family should be instantiated first!\n");
+        #endif
         return NULL;
     }
 
@@ -196,6 +210,22 @@ vm_page_family_t* lookup_page_family_by_name(char *struct_name){
     }
 
     return NULL;
+}
+
+
+/**
+ * check the vm_page is empty or not
+ */ 
+vm_bool_t mm_vm_page_is_empty(vm_page_t* vm_page){
+
+    assert(vm_page);
+
+    vm_bool_t ret = vm_page->meta_blk->is_free == MM_TRUE && 
+                    vm_page->meta_blk->next_blk == NULL && 
+                    vm_page->meta_blk->pre_blk == NULL
+                    ? MM_TRUE : MM_FALSE;
+
+    return ret;
 }
 
 
