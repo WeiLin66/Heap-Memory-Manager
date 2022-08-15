@@ -98,6 +98,103 @@ static void mm_union_free_blocks(meta_blk_t* first, meta_blk_t* second){
 
 
 /**
+ * return the max size of VM Page
+ */ 
+static inline uint32_t mm_max_page_allocatable_memory(int units){
+
+    if(units == 0 || SYSTEM_PAGE_SIZE == 0){
+
+        #if MM_DEBUG
+            printf("System Page is 0!\n");
+        #endif
+
+        return 0;
+    }
+
+    return (uint32_t)((SYSTEM_PAGE_SIZE * units) - offset_of(vm_page_t, page_data_blk));
+}
+
+
+/**
+ * 
+ * Return -1: meta_blk_data1 size is greater than meta_blk_data2
+ * Return 1: meta_blk_data2 size is greater than meta_blk_data1
+ * Return 0: meta_blk_data1 size is equal to meta_blk_data2
+ * 
+ */ 
+static int free_blocks_comparison_function(void* meta_blk_data1, void* meta_blk_data2){
+
+    assert(meta_blk_data1 && meta_blk_data2);
+
+    if(((meta_blk_t*)meta_blk_data1)->data_blk_size > ((meta_blk_t*)meta_blk_data2)->data_blk_size){
+
+        return -1;
+    }else if(((meta_blk_t*)meta_blk_data1)->data_blk_size < ((meta_blk_t*)meta_blk_data2)->data_blk_size){
+
+        return 1;
+    }
+
+    return 0;
+}
+
+
+/**
+ * Add a given free meta block of Free data block to a Priority Queue of a given Page family 
+ */ 
+static void mm_add_free_meta_block_to_free_block_list(vm_page_family_t* vm_page_family, meta_blk_t* free_blk){
+
+    assert(vm_page_family && free_blk);
+    assert(free_blk->is_free == MM_TRUE);
+
+    meta_blk_t* meta_blk_ptr = NULL;
+    ITERATE_VM_PAGE_ALL_BLOCKS_BEGIN(vm_page_family->first_page, meta_blk_ptr)
+        if(free_blocks_comparison_function(meta_blk_ptr, free_blk) <= 0){
+
+            glthread_add(&meta_blk_ptr->priority_thread_glue, &free_blk->priority_thread_glue);
+            break;
+        }
+    ITERATE_VM_PAGE_ALL_BLOCKS_END
+}
+
+
+/**
+ * return the first node of the Priority Queue
+ */ 
+static inline meta_blk_t* mm_get_smallest_free_block_page_family(vm_page_family_t* vm_page_family){
+
+    if(vm_page_family == NULL){
+
+        return NULL;
+    }
+
+    glthread_node_t* smallest_free_block_glue = vm_page_family->free_blks_pq.right;
+    if(smallest_free_block_glue){
+
+        return smallest_free_block_glue;
+    }
+
+    return NULL;
+}
+
+
+/**
+ * 
+ */ 
+static vm_bool_t mm_split_free_data_block_for_allocation(){
+
+    return MM_TRUE;
+}
+
+
+/**
+ * 
+ */ 
+static meta_blk_t mm_allocate_free_data_block(vm_page_family_t* page_family, uint32_t data_blk_size){
+
+    return NULL;
+}
+
+/**
  * instantiate structure info and store it into VM Page 
  */ 
 void mm_instantiate_new_page_family(char* struct_name, uint32_t struct_size){
@@ -117,6 +214,13 @@ void mm_instantiate_new_page_family(char* struct_name, uint32_t struct_size){
 
         first_vm_page_for_family = (vm_page_family_list_t*)mm_get_vm_page(1);
         first_vm_page_for_family->next = NULL;
+
+        strncpy(first_vm_page_for_family->vm_page[0].struct_name, struct_name, MAX_NAME_LEN);
+        first_vm_page_for_family->vm_page[0].struct_size = struct_size;
+        first_vm_page_for_family->vm_page[0].first_page = NULL;
+        glthread_init(&first_vm_page_for_family->vm_page[0].free_blks_pq);
+
+        return;
     }
 
     uint32_t count = 0;
@@ -144,6 +248,8 @@ void mm_instantiate_new_page_family(char* struct_name, uint32_t struct_size){
 
     strncpy(first_vm_page_for_family->vm_page[count].struct_name, struct_name, MAX_NAME_LEN);
     first_vm_page_for_family->vm_page[count].struct_size = struct_size;
+    first_vm_page_for_family->vm_page[count].first_page = NULL;
+    glthread_init(&first_vm_page_for_family->vm_page[count].free_blks_pq);
 }
 
 
@@ -220,12 +326,91 @@ vm_bool_t mm_vm_page_is_empty(vm_page_t* vm_page){
 
     assert(vm_page);
 
-    vm_bool_t ret = vm_page->meta_blk->is_free == MM_TRUE && 
-                    vm_page->meta_blk->next_blk == NULL && 
-                    vm_page->meta_blk->pre_blk == NULL
+    vm_bool_t ret = vm_page->meta_blk.is_free == MM_TRUE && 
+                    vm_page->meta_blk.next_blk == NULL && 
+                    vm_page->meta_blk.pre_blk == NULL
                     ? MM_TRUE : MM_FALSE;
 
     return ret;
+}
+
+
+/**
+ * VM Page Insertion
+ */ 
+vm_page_t* allocate_vm_page(vm_page_family_t* vm_page_family){
+
+    if(vm_page_family == NULL){
+
+        #if MM_DEBUG
+            printf("Insert VM Page is NULL!\n");
+        #endif
+        return NULL;
+    }
+
+    vm_page_t* new_page = mm_get_vm_page(1);
+
+    /* set the back pointer to page family */
+    new_page->page_family = vm_page_family;
+
+    /* meta block init */
+    MARK_VM_PAGE_EMPTY(new_page);
+    glthread_init(&new_page->meta_blk.priority_thread_glue);
+    new_page->meta_blk.data_blk_size = mm_max_page_allocatable_memory(1);
+    new_page->meta_blk.offset = offset_of(vm_page_t, page_data_blk);
+    new_page->pre_page = NULL;
+    new_page->next_page = NULL;
+
+    /* mantain vm_page_t dll */
+    if(vm_page_family->first_page == NULL){
+
+        vm_page_family->first_page = new_page;
+        return new_page;
+    }
+
+    new_page->next_page = vm_page_family->first_page;
+    vm_page_family->first_page->pre_page = new_page;
+
+    return new_page;
+}
+
+
+/**
+ * VM Page Deletion
+ */ 
+void mm_page_delete_and_free(vm_page_t* vm_page){
+
+    if(vm_page == NULL){
+
+        #if MM_DEBUG
+            printf("Delete VM Page is NULL!\n");
+        #endif
+        return;
+    }
+
+    /* vm_page is the first page */
+    if(vm_page->page_family->first_page == vm_page){
+
+        vm_page->page_family->first_page = vm_page->next_page;
+        if(vm_page->next_page){
+
+            vm_page->pre_page = NULL;
+        }
+        vm_page->pre_page = NULL;
+        vm_page->next_page = NULL;
+        mm_release_vm_page(vm_page, 1);
+        return;
+    }
+
+    /* vm_page is at the middle of the dll */
+    vm_page->pre_page->next_page = vm_page->next_page;
+    if(vm_page->next_page){
+
+        vm_page->next_page->pre_page = vm_page->pre_page;
+    }
+    vm_page->pre_page = NULL;
+    vm_page->next_page = NULL;
+    mm_release_vm_page(vm_page, 1);
 }
 
 
@@ -243,4 +428,49 @@ void mm_debug_fn(){
 
     mm_release_vm_page(addr1, 1);
     mm_release_vm_page(addr2, 1);
+}
+
+
+/**
+ * dynamic memory allocation fnuc for applications
+ */ 
+void* zalloc(char* struct_name, int units){
+
+    if(struct_name == NULL || units == 0){
+
+        return NULL;
+    }
+
+    vm_page_family_t* page_family = NULL;
+
+    if((page_family = lookup_page_family_by_name(struct_name)) == NULL){
+
+        #if MM_DEBUG
+            printf("structure %s can't be found!\n", struct_name);
+        #endif
+
+        return NULL;
+    }
+
+    uint32_t total_struct_size = page_family->struct_size * units;
+    meta_blk_t* free_blk = NULL;
+
+    if(total_struct_size > mm_max_page_allocatable_memory(1)){
+
+        #if MM_DEBUG
+            printf("Memory requested exeeds page size!\n");
+        #endif
+
+        return NULL; // can add extra operation to this senario
+    }
+
+    free_blk = mm_allocate_free_data_block(page_family, total_struct_size);
+
+    if(free_blk){
+
+        memset(free_blk + 1, 0x0, free_blk->data_blk_size);
+        return free_blk + 1;
+    }
+
+    return NULL;
 }

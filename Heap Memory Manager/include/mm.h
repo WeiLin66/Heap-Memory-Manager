@@ -4,9 +4,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <memory.h>
-#include <unistd.h>  // get page size from kernel
+#include <unistd.h>  // get page size from kernel (getpagesize())
 #include <sys/mman.h> // mmap(), munmap()
 #include <assert.h>
+#include "glthread.h"
 
 #define DEBUG_ON        1
 #define DEBUG_OFF       0
@@ -17,7 +18,7 @@
 #define MAX_FAMILY_PER_PAGE (SYSTEM_PAGE_SIZE - sizeof(vm_page_family_list_t*)) / sizeof(vm_page_family_t)
 
 /* the offset of a particular field_name */ 
-#define OFFSET_OF(container_structure, field_name) (size_t)&(((container_structure*)0)->field_name)
+#define offset_of(container_structure, field_name) (size_t)&(((container_structure*)0)->field_name)
 #define META_SIZE sizeof(meta_blk_t)                                  
 
 /* Iterative macro for searching the VM Page from bottom to top */
@@ -32,7 +33,22 @@
         
 #define ITERATE_PAGE_FAMILIES_END }}
 
+#define ITERATE_VM_PAGE_BRGIN(vm_page_family_ptr, cur)  \
+            {                                           \
+            cur = vm_page_family_ptr->first_page;       \
+            for(; cur; cur = cur->next_page){           
+
+#define ITERATE_VM_PAGE_END }}
+
+#define ITERATE_VM_PAGE_ALL_BLOCKS_BEGIN(vm_page_ptr, cur)  \
+            {                                               \
+            cur = &vm_page_ptr->meta_blk;                   \
+            for(; cur; cur = NEXT_META_BLOCK(cur)){                       
+
+#define ITERATE_VM_PAGE_ALL_BLOCKS_END }}
+
 #define MM_GET_PAGE_FROM_META_BLOCK(meta_blk_ptr) (void*)((uint8_t*)meta_blk_ptr - meta_blk_ptr->offset)
+
 #define NEXT_META_BLOCK(meta_blk_ptr) (((meta_blk_t*)meta_blk_ptr)->next_blk)
 #define PREV_META_BLOCK(meta_blk_ptr) (((meta_blk_t*)meta_blk_ptr)->pre_blk)
 #define NEXT_META_BLOCK_BY_SIZE(meta_blk_ptr)   \
@@ -45,11 +61,11 @@
             if(free_meta_block->next_blk)                                       \
                 free_meta_block->next_blk->pre_blk = free_meta_block           
 
-#define MARK_VM_PAGE_EMPTY(vm_page_t_ptr)               \
-            vm_page_t_ptr->meta_blk->next_blk = NULL;   \
-            vm_page_t_ptr->meta_blk->pre_blk = NULL;    \
-            vm_page_t_ptr->meta_blk->is = MM_TRUE
-            
+#define MARK_VM_PAGE_EMPTY(vm_page_t_ptr)              \
+            vm_page_t_ptr->meta_blk.next_blk = NULL;   \
+            vm_page_t_ptr->meta_blk.pre_blk = NULL;    \
+            vm_page_t_ptr->meta_blk.is_free = MM_TRUE
+
 typedef enum{
 
     MM_FALSE,
@@ -61,6 +77,7 @@ typedef struct _meta_blk{
     uint32_t data_blk_size;
     uint32_t offset;
     vm_bool_t is_free;
+    glthread_node_t priority_thread_glue;
     struct _meta_blk* pre_blk;
     struct _meta_blk* next_blk;
 }meta_blk_t;
@@ -81,6 +98,7 @@ typedef struct _vm_page_family{
     char struct_name[MAX_NAME_LEN];
     uint32_t struct_size;
     vm_page_t* first_page;
+    glthread_node_t free_blks_pq; // priority queue
 }vm_page_family_t;
 
 typedef struct _vm_page_family_list{
@@ -95,5 +113,7 @@ void mm_instantiate_new_page_family(char* struct_name, uint32_t struct_size);
 void mm_print_registered_page_families();
 vm_page_family_t* lookup_page_family_by_name(char *struct_name);
 vm_bool_t mm_vm_page_is_empty(vm_page_t* vm_page);
+vm_page_t* allocate_vm_page(vm_page_family_t* vm_page_family);
+void mm_page_delete_and_free(vm_page_t* vm_page);
 
 #endif /* __MM_H_ */

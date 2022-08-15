@@ -32,9 +32,16 @@
 
 
 /* glthread_node_t init macro */
-#define glthread_node_init(glnode)                                  \
-        glnode->left = NULL;                                        \
-        glnode->right = NULL;                                       \
+#define glthread_node_init(glnode)  \
+        glnode->left = NULL;        \
+        glnode->right = NULL;       \
+
+#define GLTHREAD_TO_STRUCT(fn_name, structure_name, field_name, glthread_ptr)                                   \
+    static inline structure_name* fn_name(glthread_t* glthread_ptr){                                            \
+        return (structure_name*)((uint8_t*)(glthread_ptr) - (uint8_t*)&(((structure_name *)0)->field_name));    \
+    }
+
+#define IS_GLTHREAD_LIST_EMPTY(glthread_ptr) (glthread_ptr->left == NULL) && (glthread_ptr->right == NULL)
 
 typedef struct _glthread_node{
 
@@ -48,9 +55,9 @@ typedef struct _glthread{
     uint32_t offset;
 } glthread_t;
 
-void glthread_init(glthread_t** list, uint32_t offset);
+void glthread_init(glthread_node_t* glthread);
 void glthread_add(glthread_node_t* current, glthread_node_t* new);
 void glthread_add_first(glthread_t* list, glthread_node_t* glnode);
-glthread_node_t* glthread_remove(glthread_node_t* current, glthread_node_t* glnode);
+void glthread_remove(glthread_node_t* glnode);
 
 #endif /* __GLTHREAD_H_ */

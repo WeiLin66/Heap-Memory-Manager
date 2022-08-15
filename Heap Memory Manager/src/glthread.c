@@ -1,22 +1,23 @@
 #include "glthread.h"
 
-/**
- * 初始化glthread list
- */
-void glthread_init(glthread_t** list, uint32_t offset){
 
-    *list = (glthread_t*)calloc(1, sizeof(glthread_t));
-    (*list)->head = NULL;
-    (*list)->offset = offset;
+/**
+ * init glthread node
+ */
+void glthread_init(glthread_node_t* glthread){
+
+    glthread->right = NULL;
+    glthread->left = NULL;
 }
 
 
 /**
- * 添加新節點到指定節點右側
+ * insert glthread node to the right of the current node
  */
 void glthread_add(glthread_node_t* current, glthread_node_t* new){
 
     if(current == NULL || new == NULL){
+
         return;
     }
 
@@ -24,6 +25,7 @@ void glthread_add(glthread_node_t* current, glthread_node_t* new){
     new->left = current;
 
     if(new->right != NULL){
+
         new->right->left = new;
     }
 
@@ -32,11 +34,12 @@ void glthread_add(glthread_node_t* current, glthread_node_t* new){
 
 
 /**
- * 添加節點到首節點 
+ * insert node to the head of the list 
  */
 void glthread_add_first(glthread_t* list, glthread_node_t* glnode){
 
     if(glnode == NULL || list == NULL){
+
         return;
     }
 
@@ -44,6 +47,7 @@ void glthread_add_first(glthread_t* list, glthread_node_t* glnode){
     glnode->left = NULL;
     
     if(glnode->right != NULL){
+
         glnode->right->left = glnode;
     }
 
@@ -52,35 +56,27 @@ void glthread_add_first(glthread_t* list, glthread_node_t* glnode){
 
 
 /**
- * 刪除指定節點 
+ * delete specific node
  */
-glthread_node_t* glthread_remove(glthread_node_t* current, glthread_node_t* glnode){
+void glthread_remove(glthread_node_t* glnode){
 
-    if(current == NULL || glnode == NULL){
-        return NULL;
+    if(glnode == NULL){
+
+        return;
     }
 
-    if(current == glnode){
-        glthread_node_t* next = glnode->right;
-        glthread_node_t* pre = glnode->left;
+    if(glnode->left){
 
-        /* 處理右節點 */
-        glnode->right = NULL;
-        if(next){
-            next->left = pre;
-        }
-
-        /* 處理左節點 */
-        glnode->left = NULL;
-        if(pre){
-            pre->right = next;
-        }
-
-        return pre != NULL ? pre->right : next;
+        glnode->left->right = glnode->right;
     }
 
-    current->right = glthread_remove(current->right, glnode); // 返回右節點
+    if(glnode->right){
 
-    return current;
+        glnode->right->left = glnode->right;
+    }
+
+    glnode->left = NULL;
+    glnode->right = NULL;
+
 }
 
