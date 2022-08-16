@@ -32,6 +32,26 @@ void glthread_add(glthread_node_t* current, glthread_node_t* new){
     current->right = new;
 }
 
+/**
+ * insert glthread node to the left of the current node
+ */
+void glthread_add_pre(glthread_node_t* current, glthread_node_t* new){
+
+    if(current == NULL || new == NULL){
+
+        return;
+    }
+
+    new->right = current;
+    current->left = new;
+
+    new->left = current->left;
+    if(current->left != NULL){
+
+        current->left->right = new;
+    }
+}
+
 
 /**
  * insert node to the head of the list 

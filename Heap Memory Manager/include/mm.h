@@ -47,8 +47,16 @@
 
 #define ITERATE_VM_PAGE_ALL_BLOCKS_END }}
 
-#define MM_GET_PAGE_FROM_META_BLOCK(meta_blk_ptr) (void*)((uint8_t*)meta_blk_ptr - meta_blk_ptr->offset)
+#define PQ_ITERATE_BEGIN(glthread_ptr, struct_type, field_name, ptr)                           \
+        {                                                                                      \
+            glthread_node_t* _node = (glthread_ptr)->right;                                    \
+            for(; _node; _node = _node->right){                                                \
+                ptr = (struct_type*)((uint8_t*)(_node) - offsetof(struct_type, field_name));   \
 
+#define PQ_ITERATE_END   }}
+
+#define MM_GET_PAGE_FROM_META_BLOCK(meta_blk_ptr) (void*)((uint8_t*)meta_blk_ptr - meta_blk_ptr->offset)
+#define GET_DATA_BLK(meta_blk_ptr) (meta_blk_t*)meta_blk_ptr + 1
 #define NEXT_META_BLOCK(meta_blk_ptr) (((meta_blk_t*)meta_blk_ptr)->next_blk)
 #define PREV_META_BLOCK(meta_blk_ptr) (((meta_blk_t*)meta_blk_ptr)->pre_blk)
 #define NEXT_META_BLOCK_BY_SIZE(meta_blk_ptr)   \
@@ -106,6 +114,8 @@ typedef struct _vm_page_family_list{
     struct _vm_page_family_list* next;
     vm_page_family_t vm_page[0];
 }vm_page_family_list_t;
+
+GLTHREAD_TO_STRUCT(glthread_to_meta_block, meta_blk_t, priority_thread_glue, glthread_ptr);
 
 void mm_init(void);
 void mm_debug_fn(void);

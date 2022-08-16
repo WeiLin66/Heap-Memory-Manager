@@ -12,7 +12,7 @@
 
 #define DEBUG_ON    1
 #define DEBUG_OFF   0
-#define MY_DEBUG    DEBUG_OFF
+#define MY_DEBUG    DEBUG_ON
 
 #define GET_VM_SIZE 1024
 #define META_SIZE   sizeof(META_BLK)

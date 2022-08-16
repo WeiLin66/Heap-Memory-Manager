@@ -170,28 +170,113 @@ static inline meta_blk_t* mm_get_smallest_free_block_page_family(vm_page_family_
     glthread_node_t* smallest_free_block_glue = vm_page_family->free_blks_pq.right;
     if(smallest_free_block_glue){
 
-        return smallest_free_block_glue;
+        return glthread_to_meta_block(smallest_free_block_glue);
     }
 
     return NULL;
 }
 
+static void insert_glthread_node_to_pq(vm_page_family_t* page_family, meta_blk_t* new_free_blk, uint32_t size){
 
-/**
- * 
+    if(new_free_blk == NULL){
+
+        return;
+    }
+
+    meta_blk_t* ptr = NULL;
+    PQ_ITERATE_BEGIN(&page_family->free_blks_pq, meta_blk_t, priority_thread_glue, ptr)
+        if(ptr->data_blk_size > size){
+
+            glthread_add_pre(&ptr->priority_thread_glue, &new_free_blk->priority_thread_glue);
+            break;
+        }
+    PQ_ITERATE_END
+}
+
+
+/* 
+ * mark meta block as being Allocated for 'size' bytes of application data
+ * return MM_TRUE if allocation successed
+ * return MM_FALSE if the allocation failed 
  */ 
-static vm_bool_t mm_split_free_data_block_for_allocation(){
+static vm_bool_t mm_split_free_data_block_for_allocation(vm_page_family_t* page_family, meta_blk_t* meta_blk, uint32_t size){
 
-    return MM_TRUE;
+    assert(page_family);
+    assert(meta_blk->is_free == MM_TRUE);
+
+    if(page_family->free_blks_pq.right == NULL){
+
+        return MM_FALSE;
+    }
+
+    meta_blk_t* ptr = NULL;
+    PQ_ITERATE_BEGIN(&page_family->free_blks_pq, meta_blk_t, priority_thread_glue, ptr)
+        if(ptr->data_blk_size == size){
+
+            meta_blk = ptr;
+            return MM_TRUE;
+        }else if(ptr->data_blk_size > size + META_SIZE){
+
+            uint32_t original_size = ptr->data_blk_size;
+
+            meta_blk = ptr;
+            ptr->data_blk_size = size;
+            ptr->is_free = MM_TRUE;
+
+            meta_blk_t* next_meta_blk = NEXT_META_BLOCK_BY_SIZE(meta_blk);
+            next_meta_blk->data_blk_size = original_size - size - META_SIZE;
+            next_meta_blk->is_free = MM_TRUE;
+
+            MM_BLIND_BLKS_FOR_ALLOCATION(meta_blk, next_meta_blk);
+            glthread_remove(&meta_blk->priority_thread_glue);
+            insert_glthread_node_to_pq(page_family, next_meta_blk, next_meta_blk->data_blk_size);
+
+            return MM_TRUE;
+        }
+    PQ_ITERATE_END
+
+    return MM_FALSE;
 }
 
 
 /**
- * 
+ * return meta block of free data block 
  */ 
-static meta_blk_t mm_allocate_free_data_block(vm_page_family_t* page_family, uint32_t data_blk_size){
+static meta_blk_t* mm_allocate_free_data_block(vm_page_family_t* page_family, uint32_t data_blk_size){
 
-    return NULL;
+    assert(page_family);
+
+    if(data_blk_size == 0){
+
+        return NULL;
+    }
+
+    meta_blk_t* free_meta_blk = NULL;
+    vm_bool_t res = MM_FALSE;
+    vm_page_t* vm_page = page_family->first_page;
+
+    if(vm_page == NULL){
+
+        allocate_vm_page(page_family);
+    }
+
+    while(vm_page){
+
+        res = mm_split_free_data_block_for_allocation(page_family, free_meta_blk, data_blk_size);
+        if(res){
+
+            break;
+        }else if(!res && vm_page){
+
+            vm_page = vm_page->next_page;
+        }else{
+
+            allocate_vm_page(page_family);
+            vm_page = page_family->first_page;
+        }
+    }
+
+    return GET_DATA_BLK(free_meta_blk);
 }
 
 /**

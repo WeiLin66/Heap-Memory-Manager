@@ -160,6 +160,7 @@ static void* find_empty_blk(size_t size, bool version){
             }else if(version && ptr->data_blk_size > META_SIZE + size){
 
                 if(!best_fit_ptr){
+
                     best_fit_ptr = ptr;
                     continue;
                 }
@@ -307,6 +308,12 @@ void bf_free(void* addr){
 }
 
 int main(int argc, char*argv[]){
+
+    uint8_t* ptr1 = ff_malloc(10);
+    uint8_t* ptr2 = ff_malloc(20);
+    uint8_t* ptr3 = ff_malloc(30);
+
+    print_meta_blk_info();
 
     return 0;
 }
