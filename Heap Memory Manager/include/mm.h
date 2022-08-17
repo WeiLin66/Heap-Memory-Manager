@@ -14,7 +14,7 @@
 #define MM_DEBUG        DEBUG_ON
 #define MAX_NAME_LEN    32
 
-/* Free VM Page size that can be use */
+/* Free VM Page size that can be used */
 #define MAX_FAMILY_PER_PAGE (SYSTEM_PAGE_SIZE - sizeof(vm_page_family_list_t*)) / sizeof(vm_page_family_t)
 
 /* the offset of a particular field_name */ 
@@ -47,11 +47,12 @@
 
 #define ITERATE_VM_PAGE_ALL_BLOCKS_END }}
 
-#define PQ_ITERATE_BEGIN(glthread_ptr, struct_type, field_name, ptr)                           \
-        {                                                                                      \
-            glthread_node_t* _node = (glthread_ptr)->right;                                    \
-            for(; _node; _node = _node->right){                                                \
-                ptr = (struct_type*)((uint8_t*)(_node) - offsetof(struct_type, field_name));   \
+#define PQ_ITERATE_BEGIN(glthread_ptr, ptr)                                                             \
+        {                                                                                               \
+            meta_blk_t* ptr = NULL;                                                                     \
+            glthread_node_t* _node = (glthread_ptr)->right;                                             \
+            for(; _node; _node = _node->right){                                                         \
+                ptr = (meta_blk_t*)((uint8_t*)(_node) - offsetof(meta_blk_t, priority_thread_glue));    \
 
 #define PQ_ITERATE_END   }}
 

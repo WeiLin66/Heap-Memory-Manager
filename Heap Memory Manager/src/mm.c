@@ -146,6 +146,11 @@ static void mm_add_free_meta_block_to_free_block_list(vm_page_family_t* vm_page_
     assert(vm_page_family && free_blk);
     assert(free_blk->is_free == MM_TRUE);
 
+    if(vm_page_family->free_blks_pq.right == NULL){
+
+        vm_page_family->free_blks_pq.right = &free_blk->priority_thread_glue;
+    }
+
     meta_blk_t* meta_blk_ptr = NULL;
     ITERATE_VM_PAGE_ALL_BLOCKS_BEGIN(vm_page_family->first_page, meta_blk_ptr)
         if(free_blocks_comparison_function(meta_blk_ptr, free_blk) <= 0){
@@ -158,39 +163,23 @@ static void mm_add_free_meta_block_to_free_block_list(vm_page_family_t* vm_page_
 
 
 /**
- * return the first node of the Priority Queue
+ * return the best fit node of the Priority Queue
  */ 
-static inline meta_blk_t* mm_get_smallest_free_block_page_family(vm_page_family_t* vm_page_family){
+static inline meta_blk_t* mm_get_bf_free_block_page_family(vm_page_family_t* vm_page_family, uint32_t size){
 
-    if(vm_page_family == NULL){
+    if(vm_page_family == NULL || size == 0){
 
         return NULL;
     }
 
-    glthread_node_t* smallest_free_block_glue = vm_page_family->free_blks_pq.right;
-    if(smallest_free_block_glue){
-
-        return glthread_to_meta_block(smallest_free_block_glue);
-    }
-
-    return NULL;
-}
-
-static void insert_glthread_node_to_pq(vm_page_family_t* page_family, meta_blk_t* new_free_blk, uint32_t size){
-
-    if(new_free_blk == NULL){
-
-        return;
-    }
-
-    meta_blk_t* ptr = NULL;
-    PQ_ITERATE_BEGIN(&page_family->free_blks_pq, meta_blk_t, priority_thread_glue, ptr)
+    PQ_ITERATE_BEGIN(&vm_page_family->free_blks_pq, ptr)
         if(ptr->data_blk_size > size){
 
-            glthread_add_pre(&ptr->priority_thread_glue, &new_free_blk->priority_thread_glue);
-            break;
+            return ptr;
         }
     PQ_ITERATE_END
+
+    return NULL;
 }
 
 
@@ -209,74 +198,43 @@ static vm_bool_t mm_split_free_data_block_for_allocation(vm_page_family_t* page_
         return MM_FALSE;
     }
 
-    meta_blk_t* ptr = NULL;
-    PQ_ITERATE_BEGIN(&page_family->free_blks_pq, meta_blk_t, priority_thread_glue, ptr)
-        if(ptr->data_blk_size == size){
 
-            meta_blk = ptr;
-            return MM_TRUE;
-        }else if(ptr->data_blk_size > size + META_SIZE){
-
-            uint32_t original_size = ptr->data_blk_size;
-
-            meta_blk = ptr;
-            ptr->data_blk_size = size;
-            ptr->is_free = MM_TRUE;
-
-            meta_blk_t* next_meta_blk = NEXT_META_BLOCK_BY_SIZE(meta_blk);
-            next_meta_blk->data_blk_size = original_size - size - META_SIZE;
-            next_meta_blk->is_free = MM_TRUE;
-
-            MM_BLIND_BLKS_FOR_ALLOCATION(meta_blk, next_meta_blk);
-            glthread_remove(&meta_blk->priority_thread_glue);
-            insert_glthread_node_to_pq(page_family, next_meta_blk, next_meta_blk->data_blk_size);
-
-            return MM_TRUE;
-        }
-    PQ_ITERATE_END
-
-    return MM_FALSE;
+    return MM_TRUE;
 }
 
 
 /**
  * return meta block of free data block 
  */ 
-static meta_blk_t* mm_allocate_free_data_block(vm_page_family_t* page_family, uint32_t data_blk_size){
+static meta_blk_t* mm_allocate_free_data_block(vm_page_family_t* page_family, uint32_t size){
 
-    assert(page_family);
+    vm_bool_t status = MM_FALSE;
+    vm_page_t* vm_page = NULL;
+    meta_blk_t* bf_meta_blk = mm_get_bf_free_block_page_family(page_family, size);
 
-    if(data_blk_size == 0){
+    /* Boundary Cases or VM Page is not enough */
+    if(!bf_meta_blk){
+
+        vm_page = allocate_vm_page(page_family);
+        status = mm_split_free_data_block_for_allocation(page_family, &vm_page->meta_blk, size);
+
+        if(status){
+
+            return &vm_page->meta_blk;
+        }
 
         return NULL;
     }
 
-    meta_blk_t* free_meta_blk = NULL;
-    vm_bool_t res = MM_FALSE;
-    vm_page_t* vm_page = page_family->first_page;
+    /* free block meets the request */
+    status = mm_split_free_data_block_for_allocation(page_family, bf_meta_blk, size);
 
-    if(vm_page == NULL){
+    if(status){
 
-        allocate_vm_page(page_family);
+        return bf_meta_blk;
     }
 
-    while(vm_page){
-
-        res = mm_split_free_data_block_for_allocation(page_family, free_meta_blk, data_blk_size);
-        if(res){
-
-            break;
-        }else if(!res && vm_page){
-
-            vm_page = vm_page->next_page;
-        }else{
-
-            allocate_vm_page(page_family);
-            vm_page = page_family->first_page;
-        }
-    }
-
-    return GET_DATA_BLK(free_meta_blk);
+    return NULL;
 }
 
 /**
@@ -446,6 +404,8 @@ vm_page_t* allocate_vm_page(vm_page_family_t* vm_page_family){
     new_page->pre_page = NULL;
     new_page->next_page = NULL;
 
+    mm_add_free_meta_block_to_free_block_list(vm_page_family, &new_page->meta_blk);
+
     /* mantain vm_page_t dll */
     if(vm_page_family->first_page == NULL){
 
@@ -553,7 +513,7 @@ void* zalloc(char* struct_name, int units){
 
     if(free_blk){
 
-        memset(free_blk + 1, 0x0, free_blk->data_blk_size);
+        memset(free_blk + 1, 0x0, total_struct_size);
         return free_blk + 1;
     }
 
