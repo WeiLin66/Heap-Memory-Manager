@@ -27,17 +27,6 @@ typedef struct _teacher{
 }teacher_t;
 
 
-void struct_finder(char* struct_name){
-    vm_page_family_t *ptr = lookup_page_family_by_name(struct_name);
-
-    if(ptr){
-        printf("Struct %s find!\n", struct_name);
-    }else{
-        printf("VM Page doesn't contain struct %s!\n", struct_name);
-    }
-}
-
-
 void testapp_demo(){
 
     mm_init();
@@ -46,10 +35,25 @@ void testapp_demo(){
     MM_REG_STRUCT(student_t);
     MM_REG_STRUCT(teacher_t);
 
-    mm_print_registered_page_families();
+    // mm_print_registered_page_families();
 
-    struct_finder(STRING_CONVERTER(emp_t));
-    struct_finder(STRING_CONVERTER(student_t));
-    struct_finder(STRING_CONVERTER(teacher_t));
+#if 0
+    ZMALLOC(emp_t, 1);
+    ZMALLOC(emp_t, 1);
+    ZMALLOC(emp_t, 1);
+    ZMALLOC(emp_t, 1);
+    ZMALLOC(emp_t, 1);
+    ZMALLOC(emp_t, 1);
+
+#endif
+
+#if 1
+    for(int i=0; i<500; i++){
+
+        ZMALLOC(emp_t, 1);
+    }
+#endif
+
+    mm_print_memory_usage();
     
 }

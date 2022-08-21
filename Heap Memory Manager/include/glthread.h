@@ -4,21 +4,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <assert.h>
 
 /* offset caculate macro */
 #define offsetof(struct_name, field_name) (uint64_t)&((struct_name*)0)->field_name
 
+#define BASE(glthreadptr)   ((glthreadptr)->right)
+
 /* Iterative macro (dll) */
-#define GLTHREAD_ITERATE_BEGIN(list_ptr, struct_type, ptr)          \
-{                                                                   \
-    glthread_node_t* _node = list_ptr->head;                        \
-    glthread_node_t* _node_next = NULL;                             \
-    for(; _node; _node = _node_next){                               \
-        _node_next = _node->right;                                  \
-        ptr = (struct_type *)((char *)_node - list_ptr->offset);
+#define ITERATE_GLTHREAD_BEGIN(glthreadptrstart, glthreadptr)                                      \
+{                                                                                                  \
+    glthread_node_t *_glthread_ptr = NULL;                                                         \
+    glthreadptr = BASE(glthreadptrstart);                                                          \
+    for(; glthreadptr!= NULL; glthreadptr = _glthread_ptr){                                        \
+        _glthread_ptr = (glthreadptr)->right;
 
-
-#define GLTHREAD_ITERATE_END }}
+#define ITERATE_GLTHREAD_END(glthreadptrstart, glthreadptr)  }}
 
 #define ITERATE_LIST_BEGIN(list_ptr, _node)           \
 {                                                     \
@@ -41,6 +42,7 @@
     }
 
 #define IS_GLTHREAD_LIST_EMPTY(glthread_ptr) (glthread_ptr->left == NULL) && (glthread_ptr->right == NULL)
+#define GLTHREAD_GET_USER_DATA_FROM_OFFSET(glthreadptr, offset) (void*)((uint8_t*)(glthreadptr) - offset)
 
 typedef struct _glthread_node{
 
@@ -59,5 +61,6 @@ void glthread_add(glthread_node_t* current, glthread_node_t* new);
 void glthread_add_pre(glthread_node_t* current, glthread_node_t* new);
 void glthread_add_first(glthread_t* list, glthread_node_t* glnode);
 void glthread_remove(glthread_node_t* glnode);
+void glthread_priority_insert(glthread_node_t* base_glthread, glthread_node_t* new_glthread, int (*comp_fn)(void *, void *), int offset);
 
 #endif /* __GLTHREAD_H_ */

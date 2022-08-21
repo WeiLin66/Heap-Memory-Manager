@@ -8,10 +8,11 @@
 #include <sys/mman.h> // mmap(), munmap()
 #include <assert.h>
 #include "glthread.h"
+#include "css.h"
 
 #define DEBUG_ON        1
 #define DEBUG_OFF       0
-#define MM_DEBUG        DEBUG_ON
+#define MM_DEBUG        DEBUG_OFF
 #define MAX_NAME_LEN    32
 
 /* Free VM Page size that can be used */
@@ -33,7 +34,7 @@
         
 #define ITERATE_PAGE_FAMILIES_END }}
 
-#define ITERATE_VM_PAGE_BRGIN(vm_page_family_ptr, cur)  \
+#define ITERATE_VM_PAGE_BEGIN(vm_page_family_ptr, cur)  \
             {                                           \
             cur = vm_page_family_ptr->first_page;       \
             for(; cur; cur = cur->next_page){           
@@ -52,7 +53,7 @@
             meta_blk_t* ptr = NULL;                                                                     \
             glthread_node_t* _node = (glthread_ptr)->right;                                             \
             for(; _node; _node = _node->right){                                                         \
-                ptr = (meta_blk_t*)((uint8_t*)(_node) - offsetof(meta_blk_t, priority_thread_glue));    \
+                ptr = (meta_blk_t*)((uint8_t*)(_node) - offsetof(meta_blk_t, priority_thread_glue));    
 
 #define PQ_ITERATE_END   }}
 
@@ -63,17 +64,19 @@
 #define NEXT_META_BLOCK_BY_SIZE(meta_blk_ptr)   \
             (meta_blk_t*)((uint8_t*)((meta_blk_t*)meta_blk_ptr + 1) + meta_blk_ptr->data_blk_size)
 
-#define MM_BLIND_BLKS_FOR_ALLOCATION(allocated_meta_block, free_meta_block)     \
-            allocated_meta_block->next_blk = free_meta_block;                   \
-            free_meta_block->pre_blk = allocated_meta_block;                    \
-            free_meta_block->next_blk = allocated_meta_block->next_blk;         \
-            if(free_meta_block->next_blk)                                       \
-                free_meta_block->next_blk->pre_blk = free_meta_block           
+#define MM_BIND_BLKS_FOR_ALLOCATION(allocated_meta_block, free_meta_block)      \
+    free_meta_block->pre_blk = allocated_meta_block;                            \
+    free_meta_block->next_blk = allocated_meta_block->next_blk;                 \
+    allocated_meta_block->next_blk = free_meta_block;                           \
+    if (free_meta_block->next_blk)                                              \
+        free_meta_block->next_blk->pre_blk = free_meta_block     
 
 #define MARK_VM_PAGE_EMPTY(vm_page_t_ptr)              \
             vm_page_t_ptr->meta_blk.next_blk = NULL;   \
             vm_page_t_ptr->meta_blk.pre_blk = NULL;    \
             vm_page_t_ptr->meta_blk.is_free = MM_TRUE
+
+#define ZMALLOC(struct_name, units) zalloc(#struct_name, units)
 
 typedef enum{
 
