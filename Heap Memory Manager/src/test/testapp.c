@@ -37,17 +37,17 @@ void testapp_demo(){
 
     // mm_print_registered_page_families();
 
-#if 0
+#if 1
     ZMALLOC(emp_t, 1);
     ZMALLOC(emp_t, 1);
     ZMALLOC(emp_t, 1);
-    ZMALLOC(emp_t, 1);
-    ZMALLOC(emp_t, 1);
-    ZMALLOC(emp_t, 1);
+    ZMALLOC(student_t, 1);
+    ZMALLOC(student_t, 1);
+    ZMALLOC(teacher_t, 1);
 
 #endif
 
-#if 1
+#if 0
     for(int i=0; i<500; i++){
 
         ZMALLOC(emp_t, 1);

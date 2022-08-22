@@ -37,12 +37,12 @@
 #define ITERATE_LIST_END }}
 
 #define BLIND_BLKS_FOR_SPLITING(allocated_meta_block, free_meta_block)      \
-            allocated_meta_block->next = free_meta_block;                   \
             free_meta_block->pre = allocated_meta_block;                    \
             free_meta_block->next = allocated_meta_block->next;             \
+            allocated_meta_block->next = free_meta_block;                   \
             if(free_meta_block->next)                                       \
-                free_meta_block->next->pre = free_meta_block                           
-
+                free_meta_block->next->pre = free_meta_block                
+            
 #define GET_META_HEAD ((META_BLK*)meta_blk_list.head)
 #define GET_META_CUR ((META_BLK*)meta_blk_list.cur)
 #define GET_META_TAIL ((META_BLK*)meta_blk_list.tail)

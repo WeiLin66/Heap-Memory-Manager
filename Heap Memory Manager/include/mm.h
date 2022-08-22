@@ -59,6 +59,7 @@
 
 #define MM_GET_PAGE_FROM_META_BLOCK(meta_blk_ptr) (void*)((uint8_t*)meta_blk_ptr - meta_blk_ptr->offset)
 #define GET_DATA_BLK(meta_blk_ptr) (meta_blk_t*)meta_blk_ptr + 1
+#define GET_META_BLK(meta_blk_ptr) (meta_blk_t*)meta_blk_ptr - 1
 #define NEXT_META_BLOCK(meta_blk_ptr) (((meta_blk_t*)meta_blk_ptr)->next_blk)
 #define PREV_META_BLOCK(meta_blk_ptr) (((meta_blk_t*)meta_blk_ptr)->pre_blk)
 #define NEXT_META_BLOCK_BY_SIZE(meta_blk_ptr)   \

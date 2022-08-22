@@ -301,6 +301,15 @@ static meta_blk_t* mm_allocate_free_data_block(vm_page_family_t* page_family, ui
 
 
 /**
+ * 
+ */ 
+static meta_blk_t* mm_free_blocks(meta_blk* free_meta){
+
+
+}
+
+
+/**
  * print all meta blocks in the vm page
  */ 
 static uint32_t mm_print_meta_block_usage(vm_page_family_t* current_family){
@@ -349,6 +358,17 @@ static uint32_t mm_print_meta_block_usage(vm_page_family_t* current_family){
     }
 
     return page_count;
+}
+
+
+/**
+ * hand hard internal fragmentation when carry out merging
+ */ 
+static uint32_t mm_get_hard_internal_memory_frag_size(meta_blk_t* first, meta_blk_t* second){
+
+    meta_blk_t* idea_meta_blk = NEXT_META_BLOCK_BY_SIZE(first);
+
+    return (uint32_t)((uint64_t)second - (uint64_t)idea_meta_blk);
 }
 
 
@@ -632,6 +652,19 @@ void* zalloc(char* struct_name, int units){
     }
 
     return NULL;
+}
+
+
+/**
+ * 
+ */ 
+void* zfree(void* addr){
+
+    assert(addr);
+
+    meta_blk_t* free_blk = GET_META_BLK(addr);
+    free_blk->is_free = MM_TRUE;
+    mm_free_blocks(free_blk);
 }
 
 
