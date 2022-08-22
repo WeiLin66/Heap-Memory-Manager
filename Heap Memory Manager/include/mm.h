@@ -70,7 +70,13 @@
     free_meta_block->next_blk = allocated_meta_block->next_blk;                 \
     allocated_meta_block->next_blk = free_meta_block;                           \
     if (free_meta_block->next_blk)                                              \
-        free_meta_block->next_blk->pre_blk = free_meta_block     
+        free_meta_block->next_blk->pre_blk = free_meta_block   
+
+#define MM_BIND_BLKS_FOR_DEALLOCATION(freed_meta_block_top, freed_meta_block_down)  \
+    freed_meta_block_top->next_blk = freed_meta_block_down->next_blk;               \
+    if(freed_meta_block_down->next_blk)                                             \
+    freed_meta_block_down->next_blk->pre_blk = freed_meta_block_top
+
 
 #define MARK_VM_PAGE_EMPTY(vm_page_t_ptr)              \
             vm_page_t_ptr->meta_blk.next_blk = NULL;   \
@@ -78,6 +84,7 @@
             vm_page_t_ptr->meta_blk.is_free = MM_TRUE
 
 #define ZMALLOC(struct_name, units) zalloc(#struct_name, units)
+#define ZFREE(addr) zfree(addr);
 
 typedef enum{
 

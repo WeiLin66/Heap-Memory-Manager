@@ -8,6 +8,6 @@
 void testapp_demo(void);
 void mm_print_memory_usage(void);
 void* zalloc(char* struct_name, int units);
-void* zfree(void* addr);
+void zfree(void* addr);
 
 #endif /* __UAPI_MM_H_ */

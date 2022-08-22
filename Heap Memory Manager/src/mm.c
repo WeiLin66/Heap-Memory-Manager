@@ -88,12 +88,11 @@ static void mm_union_free_blocks(meta_blk_t* first, meta_blk_t* second){
 
     assert(first->is_free == MM_TRUE && second->is_free == MM_TRUE);
 
-    first->data_blk_size += META_SIZE + second->data_blk_size;
-    first->next_blk = second->next_blk;
-    if(first->next_blk){
+    glthread_remove(&first->priority_thread_glue);
+    glthread_remove(&second->priority_thread_glue);
 
-        first->next_blk->pre_blk = first;
-    }
+    first->data_blk_size += META_SIZE + second->data_blk_size;
+    MM_BIND_BLKS_FOR_DEALLOCATION(first, second);
 }
 
 
@@ -143,7 +142,11 @@ static int free_blocks_comparison_function(void* meta_blk_data1, void* meta_blk_
  */ 
 static void mm_add_free_meta_block_to_free_block_list(vm_page_family_t* vm_page_family, meta_blk_t* free_blk){
 
-    assert(vm_page_family && free_blk);
+    if(free_blk == NULL){
+
+        return;
+    }
+
     assert(free_blk->is_free == MM_TRUE);
 
     glthread_priority_insert(&vm_page_family->free_blks_pq,
@@ -153,6 +156,9 @@ static void mm_add_free_meta_block_to_free_block_list(vm_page_family_t* vm_page_
 }
 
 
+/**
+ * 
+ */ 
 static vm_page_t* mm_family_add_new_page(vm_page_family_t *vm_page_family){
 
     vm_page_t* new_vm_page = allocate_vm_page(vm_page_family);
@@ -301,11 +307,60 @@ static meta_blk_t* mm_allocate_free_data_block(vm_page_family_t* page_family, ui
 
 
 /**
+ * hand hard internal fragmentation when carry out merging
+ */ 
+static uint32_t mm_get_hard_internal_memory_frag_size(meta_blk_t* first, meta_blk_t* second){
+
+    meta_blk_t* idea_meta_blk = NEXT_META_BLOCK_BY_SIZE(first);
+
+    return (uint32_t)((uint64_t)second - (uint64_t)idea_meta_blk);
+}
+
+
+/**
  * 
  */ 
-static meta_blk_t* mm_free_blocks(meta_blk* free_meta){
+static meta_blk_t* mm_free_blocks(meta_blk_t* free_meta_blk){
 
+    free_meta_blk->is_free = MM_TRUE;
+    meta_blk_t* next_meta_blk = NEXT_META_BLOCK(free_meta_blk);
+    meta_blk_t* pre_meta_blk = PREV_META_BLOCK(free_meta_blk);
+    meta_blk_t* ret = NULL;
+    vm_page_t* vm_page = MM_GET_PAGE_FROM_META_BLOCK(free_meta_blk);
+    vm_page_family_t* vm_page_family = vm_page->page_family;
 
+    if(next_meta_blk){
+
+        free_meta_blk->data_blk_size += mm_get_hard_internal_memory_frag_size(free_meta_blk, next_meta_blk);
+    }else{
+
+        uint8_t* top_of_vm_page = (uint8_t*)vm_page + SYSTEM_PAGE_SIZE;
+        uint8_t* tail_of_data_blk = (uint8_t*)(free_meta_blk + 1) + free_meta_blk->data_blk_size;
+        uint64_t hard_IF = (uint64_t)(top_of_vm_page - tail_of_data_blk);
+        free_meta_blk->data_blk_size += hard_IF;
+    }
+
+    if(next_meta_blk && next_meta_blk->is_free == MM_TRUE){
+ 
+        mm_union_free_blocks(free_meta_blk, next_meta_blk);
+        ret = free_meta_blk;
+    }
+
+    if(pre_meta_blk && pre_meta_blk->is_free == MM_TRUE){
+
+        mm_union_free_blocks(pre_meta_blk, free_meta_blk);
+        ret = pre_meta_blk;
+    }
+
+    if(mm_vm_page_is_empty(vm_page)){
+
+        mm_page_delete_and_free(vm_page);
+        return NULL;
+    }
+
+    mm_add_free_meta_block_to_free_block_list(vm_page_family, ret);
+
+    return ret;
 }
 
 
@@ -358,17 +413,6 @@ static uint32_t mm_print_meta_block_usage(vm_page_family_t* current_family){
     }
 
     return page_count;
-}
-
-
-/**
- * hand hard internal fragmentation when carry out merging
- */ 
-static uint32_t mm_get_hard_internal_memory_frag_size(meta_blk_t* first, meta_blk_t* second){
-
-    meta_blk_t* idea_meta_blk = NEXT_META_BLOCK_BY_SIZE(first);
-
-    return (uint32_t)((uint64_t)second - (uint64_t)idea_meta_blk);
 }
 
 
@@ -658,12 +702,10 @@ void* zalloc(char* struct_name, int units){
 /**
  * 
  */ 
-void* zfree(void* addr){
-
-    assert(addr);
+void zfree(void* addr){
 
     meta_blk_t* free_blk = GET_META_BLK(addr);
-    free_blk->is_free = MM_TRUE;
+    assert(free_blk->is_free == MM_FALSE);
     mm_free_blocks(free_blk);
 }
 
