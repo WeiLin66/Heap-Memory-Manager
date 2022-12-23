@@ -1,0 +1,6 @@
+make --dry-run --keep-going --print-directory
+make: Entering directory '/media/sf_share/my-malloc'
+make: Leaving directory '/media/sf_share/my-malloc'
+ 
+make: *** No targets specified and no makefile found.  Stop.
+

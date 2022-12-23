@@ -1,16 +1,7 @@
 # my_malloc專案概覽
 ## duke ECE 650 folder
 
-### Task 1
-
 使用`brk()` / `sbrk()`system call編寫自定義`malloc()` / `free()`函式
-
-
-
-### Task 2
-
-線程安全版本，TBD
-
 
 
 ## Heap Memory Manager
