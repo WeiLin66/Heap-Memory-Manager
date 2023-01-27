@@ -73,6 +73,8 @@ static void mm_release_vm_page(void* vm_page, uint32_t units){
         #if MM_DEBUG
             printf("Fail to munmap VM page to kernel!\n");
         #endif
+        
+        return;
     }
 
     #if MM_DEBUG
@@ -157,7 +159,7 @@ static void mm_add_free_meta_block_to_free_block_list(vm_page_family_t* vm_page_
 
 
 /**
- * 
+ * add new virtual memory page to list
  */ 
 static vm_page_t* mm_family_add_new_page(vm_page_family_t *vm_page_family){
 
